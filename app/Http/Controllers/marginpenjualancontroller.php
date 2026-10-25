@@ -74,4 +74,14 @@ class MarginPenjualanController extends Controller
         $margin->delete();
         return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil dihapus');
     }
+
+    // STORED PROCEDURE: Menjalankan sp_set_margin_aktif untuk mengubah status aktif
+    public function aktifkan(string $id)
+    {
+        // Mengeksekusi Stored Procedure menggunakan DB::statement dengan parameter ID
+        DB::statement("CALL sp_set_margin_aktif(?)", [$id]);
+
+        return redirect()->route('margin-penjualan.index')
+            ->with('success', 'Margin aktif berhasil diperbarui melalui Stored Procedure!');
+    }
 }

@@ -24,11 +24,12 @@
         .btn-action-edit:hover { background: #c7d2fe; color: #312e81; }
         .btn-action-del { background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; font-weight: 500; }
         .btn-action-del:hover { background: #fecaca; }
+        .text-harga-jual { color: #059669; font-weight: 700; }
     </style>
 </head>
 <body class="py-4">
 
-<div class="container" style="max-width: 1040px;">
+<div class="container" style="max-width: 1100px;">
     <!-- Menu Tab Navigasi -->
     <div class="nav-card p-2 mb-3 d-flex flex-wrap gap-2">
         <a href="{{ route('dashboard') }}" class="nav-link-custom"><i class="fa-solid fa-house me-1"></i> Beranda</a>
@@ -44,7 +45,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-slate-800 m-0">Master Barang</h4>
-                <small class="text-muted">Data diambil dari SQL View <code>view_barang</code></small>
+                <small class="text-muted">Data diambil dari SQL View <code>view_barang</code> & Stored Function <code>hitung_harga_jual()</code></small>
             </div>
             <a href="{{ route('barang.create') }}" class="btn btn-indigo px-3">
                 <i class="fa-solid fa-plus me-1"></i> Tambah Barang
@@ -66,7 +67,8 @@
                         <th>Nama Produk</th>
                         <th class="text-center">Kategori</th>
                         <th>Satuan</th>
-                        <th>Harga</th>
+                        <th>Harga Beli</th>
+                        <th>Harga Jual (Margin Aktif)</th>
                         <th class="text-center">Status</th>
                         <th class="text-center" style="width: 140px;">Aksi</th>
                     </tr>
@@ -75,7 +77,6 @@
                     @foreach($barang as $row)
                     <tr>
                         <td class="text-muted fw-bold">#{{ $row->idbarang }}</td>
-                        <!-- Mendukung baik nama_barang maupun nama tergantung alias di View -->
                         <td class="fw-semibold text-dark">{{ $row->nama_barang ?? $row->nama }}</td>
                         <td class="text-center">
                             @if($row->jenis == 'B')
@@ -84,9 +85,14 @@
                                 <span class="badge-jenis-p">Produk Jadi</span>
                             @endif
                         </td>
-                        <!-- Mengambil langsung nama_satuan dari hasil JOIN di view_barang -->
                         <td class="text-slate-600">{{ $row->nama_satuan ?? '-' }}</td>
-                        <td class="fw-bold text-dark">Rp {{ number_format($row->harga, 0, ',', '.') }}</td>
+                        <td class="text-muted">Rp {{ number_format($row->harga, 0, ',', '.') }}</td>
+                        
+                        <!-- Hasil perhitungan Stored Function hitung_harga_jual() -->
+                        <td class="text-harga-jual">
+                            Rp {{ number_format($row->harga_jual ?? $row->harga, 0, ',', '.') }}
+                        </td>
+
                         <td class="text-center">
                             @if($row->status == 1)
                                 <span class="badge-pill-aktif">Aktif</span>

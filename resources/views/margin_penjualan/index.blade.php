@@ -23,6 +23,8 @@
         .btn-action-edit:hover { background: #c7d2fe; color: #312e81; }
         .btn-action-del { background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; font-weight: 500; }
         .btn-action-del:hover { background: #fecaca; }
+        .btn-action-activate { background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; font-weight: 600; }
+        .btn-action-activate:hover { background: #bbf7d0; color: #14532d; }
     </style>
 </head>
 <body class="py-4">
@@ -43,7 +45,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-slate-800 m-0">Master Margin Penjualan</h4>
-                <small class="text-muted">Data diambil dari SQL View <code>view_margin_penjualan</code></small>
+                <small class="text-muted">Data diambil dari SQL View <code>view_margin_penjualan</code> & aktivasi via SP <code>sp_set_margin_aktif</code></small>
             </div>
             <a href="{{ route('margin-penjualan.create') }}" class="btn btn-indigo px-3">
                 <i class="fa-solid fa-plus me-1"></i> Tambah Margin
@@ -66,7 +68,7 @@
                         <th class="text-center">Status</th>
                         <th>Diinput Oleh</th>
                         <th>Tanggal Dibuat</th>
-                        <th class="text-center" style="width: 140px;">Aksi</th>
+                        <th class="text-center" style="width: 220px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -78,7 +80,7 @@
                         </td>
                         <td class="text-center">
                             @if($row->status == 1)
-                                <span class="badge-pill-aktif">Aktif</span>
+                                <span class="badge-pill-aktif"><i class="fa-solid fa-check me-1"></i>Aktif</span>
                             @else
                                 <span class="badge-pill-nonaktif">Non-Aktif</span>
                             @endif
@@ -90,6 +92,16 @@
                             {{ $row->created_at ? date('d M Y, H:i', strtotime($row->created_at)) : '-' }}
                         </td>
                         <td class="text-center">
+                            <!-- TOMBOL EKSEKUSI STORED PROCEDURE -->
+                            @if($row->status == 0)
+                                <form action="{{ route('margin-penjualan.aktifkan', $row->idmargin_penjualan) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn-action-activate me-1" title="Aktifkan lewat SP">
+                                        <i class="fa-solid fa-power-off me-1"></i>Aktifkan
+                                    </button>
+                                </form>
+                            @endif
+
                             <a href="{{ route('margin-penjualan.edit', $row->idmargin_penjualan) }}" class="btn-action-edit me-1">
                                 <i class="fa-solid fa-pen-to-square me-1"></i>Edit
                             </a>

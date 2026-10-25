@@ -6,14 +6,14 @@ use App\Models\Barang;
 use App\Models\Vendor;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\MarginPenjualan; // <-- Tambahkan ini
+use App\Models\MarginPenjualan;
 
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\MarginPenjualanController; // <-- Tambahkan ini
+use App\Http\Controllers\MarginPenjualanController;
 
 Route::get('/', function () {
     $totalSatuan = Satuan::count();
@@ -21,7 +21,7 @@ Route::get('/', function () {
     $totalVendor = Vendor::count();
     $totalRole   = Role::count();
     $totalUser   = User::count();
-    $totalMargin = MarginPenjualan::count(); // <-- Hitung total margin
+    $totalMargin = MarginPenjualan::count();
 
     return view('dashboard', compact(
         'totalSatuan', 
@@ -29,7 +29,7 @@ Route::get('/', function () {
         'totalVendor', 
         'totalRole', 
         'totalUser',
-        'totalMargin' // <-- Kirim ke view
+        'totalMargin'
     ));
 })->name('dashboard');
 
@@ -39,4 +39,9 @@ Route::resource('barang', BarangController::class);
 Route::resource('vendor', VendorController::class);
 Route::resource('role', RoleController::class);
 Route::resource('user', UserController::class);
-Route::resource('margin-penjualan', MarginPenjualanController::class); 
+
+// Rute khusus untuk aktivasi margin via Stored Procedure
+Route::post('margin-penjualan/{id}/aktifkan', [MarginPenjualanController::class, 'aktifkan'])
+    ->name('margin-penjualan.aktifkan');
+
+Route::resource('margin-penjualan', MarginPenjualanController::class);

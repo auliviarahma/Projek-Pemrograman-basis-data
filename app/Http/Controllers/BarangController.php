@@ -8,10 +8,16 @@ use Illuminate\Support\Facades\DB;
 
 class BarangController extends Controller
 {
-    // READ 1: Menampilkan daftar tabel dari view_barang
+    // READ 1: Menampilkan daftar tabel dari view_barang + eksekusi Stored Function harga_jual
     public function index()
     {
-        $barang = DB::table('view_barang')->get();
+        $barang = DB::table('view_barang')
+            ->select(
+                'view_barang.*',
+                DB::raw('hitung_harga_jual(idbarang) as harga_jual')
+            )
+            ->get();
+
         return view('barang.index', compact('barang'));
     }
 
@@ -37,10 +43,16 @@ class BarangController extends Controller
         return redirect()->route('barang.index')->with('success', 'Barang berhasil ditambahkan');
     }
 
-    // READ 3: Mengambil detail data barang & list satuan dari Database View
+    // READ 3: Mengambil detail data barang (termasuk harga jual dari Function) & list satuan
     public function edit(string $id)
     {
-        $barang = DB::table('view_barang')->where('idbarang', $id)->first();
+        $barang = DB::table('view_barang')
+            ->select(
+                'view_barang.*',
+                DB::raw('hitung_harga_jual(idbarang) as harga_jual')
+            )
+            ->where('idbarang', $id)
+            ->first();
 
         if (!$barang) {
             abort(404, 'Data barang tidak ditemukan');
