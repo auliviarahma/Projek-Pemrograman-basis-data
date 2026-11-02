@@ -22,12 +22,9 @@ use App\Http\Controllers\MarginPenjualanController;
 // 1. DASHBOARD UTAMA
 // ==========================================
 Route::get('/', function () {
-    $totalSatuan = Satuan::count();
-    $totalBarang = Barang::count();
-    $totalVendor = Vendor::count();
-    $totalRole   = Role::count();
-    $totalUser   = User::count();
-    $totalMargin = MarginPenjualan::count();
+    $totalSatuan = Satuan::count();$totalBarang = Barang::count();
+    $totalVendor = Vendor::count();$totalRole   = Role::count();
+    $totalUser   = User::count();$totalMargin = MarginPenjualan::count();
 
     return view('dashboard', compact(
         'totalSatuan', 
@@ -52,6 +49,9 @@ Route::post('margin-penjualan/{id}/aktifkan', [MarginPenjualanController::class,
     ->name('margin-penjualan.aktifkan');
 Route::resource('margin-penjualan', MarginPenjualanController::class);
 
+Route::redirect('/margin', '/margin-penjualan');
+Route::redirect('/margin_penjualan', '/margin-penjualan');
+
 // ==========================================
 // 3. BUKU BESAR KARTU STOK (MEMBACA TRIGGER)
 // ==========================================
@@ -75,11 +75,18 @@ Route::get('kartu-stok', function () {
 })->name('kartu-stok.index');
 
 // ==========================================
-// 4. TRANSAKSI PENGADAAN (VIEW v_pengadaan)
+// 4. TRANSAKSI PENGADAAN (DILENGKAPI USER)
 // ==========================================
 Route::get('pengadaan', function () {
-    $dataPengadaan = DB::table('v_pengadaan')
-        ->orderBy('idpengadaan', 'desc')
+    $dataPengadaan = DB::table('pengadaan')
+        ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
+        ->leftJoin('user', 'pengadaan.user_iduser', '=', 'user.iduser')
+        ->select(
+            'pengadaan.*',
+            'vendor.nama_vendor',
+            'user.username'
+        )
+        ->orderBy('pengadaan.idpengadaan', 'desc')
         ->get();
 
     return view('pengadaan.index', compact('dataPengadaan'));
@@ -87,24 +94,24 @@ Route::get('pengadaan', function () {
 
 Route::get('pengadaan/create', function () {
     $vendors = DB::table('vendor')->get();
-    $barangs = DB::table('barang')->get();
+    $barangs = DB::table('barang')->get();$users   = DB::table('user')->get();
 
-    return view('pengadaan.create', compact('vendors', 'barangs'));
+    return view('pengadaan.create', compact('vendors', 'barangs', 'users'));
 })->name('pengadaan.create');
 
 Route::post('pengadaan/store', function (Request $request) {
     try {
         DB::transaction(function () use ($request) {
-            $jumlah = (int) $request->jumlah;
-            $harga = (int) $request->harga_satuan;
+            $jumlah = (int)$request->jumlah;
+            $harga = (int)$request->harga_satuan;
             $subtotal = $jumlah * $harga;
-            $ppn = (int) ($subtotal * 0.11);
-            $total = $subtotal + $ppn;
+            $ppn = (int) ($subtotal * 0.11);$total = $subtotal +$ppn;
 
-            $firstUser = DB::table('user')->first();
-            $userId = $firstUser ? $firstUser->iduser : 1;
+            $userId =$request->iduser;
+            if (!$userId) {
+                $firstUser = DB::table('user')->first();$userId = $firstUser ? $firstUser->iduser : 1;
+            }
 
-            // Simpan Header Pengadaan
             $idpengadaan = DB::table('pengadaan')->insertGetId([
                 'timestamp'       => now(),
                 'status'          => '1',
@@ -115,7 +122,6 @@ Route::post('pengadaan/store', function (Request $request) {
                 'vendor_idvendor' => $request->idvendor
             ]);
 
-            // Simpan Detail Pengadaan
             DB::table('detail_pengadaan')->insert([
                 'idpengadaan'  => $idpengadaan,
                 'idbarang'     => $request->idbarang,
@@ -132,51 +138,73 @@ Route::post('pengadaan/store', function (Request $request) {
 })->name('pengadaan.store');
 
 // ==========================================
-// 5. TRANSAKSI PENERIMAAN (VIEW v_penerimaan & MASTER-DETAIL)
+// 5. TRANSAKSI PENERIMAAN (TERPADU & USER)
 // ==========================================
-
-// Daftar Seluruh Penerimaan (Membaca SQL View)
 Route::get('penerimaan', function () {
-    $dataPenerimaan = DB::table('v_penerimaan')
-        ->orderBy('idpenerimaan', 'desc')
+    $headerPenerimaan = DB::table('penerimaan')
+        ->leftJoin('pengadaan', 'penerimaan.idpengadaan', '=', 'pengadaan.idpengadaan')
+        ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
+        ->leftJoin('user', 'penerimaan.iduser', '=', 'user.iduser')
+        ->select(
+            'penerimaan.idpenerimaan',
+            'penerimaan.created_at',
+            'penerimaan.status',
+            'penerimaan.idpengadaan',
+            'vendor.nama_vendor',
+            'pengadaan.total_nilai',
+            'user.username'
+        )
+        ->orderBy('penerimaan.idpenerimaan', 'desc')
         ->get();
 
-    return view('penerimaan.index', compact('dataPenerimaan'));
-})->name('penerimaan.index');
-
-// Form Pemilihan No. PO Pengadaan
-Route::get('penerimaan/create', function () {
     $pengadaans = DB::table('pengadaan')
         ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
         ->select('pengadaan.*', 'vendor.nama_vendor')
         ->orderBy('pengadaan.idpengadaan', 'desc')
         ->get();
 
-    return view('penerimaan.create', compact('pengadaans'));
-})->name('penerimaan.create');
+    foreach ($pengadaans as $po) {$totalPesan = DB::table('detail_pengadaan')
+            ->where('idpengadaan', $po->idpengadaan)
+            ->sum('jumlah');
 
-// Simpan Header Penerimaan & Langsung Masuk ke Detail
+        $totalTerima = DB::table('detail_penerimaan')
+            ->join('penerimaan', 'detail_penerimaan.idpenerimaan', '=', 'penerimaan.idpenerimaan')
+            ->where('penerimaan.idpengadaan', $po->idpengadaan)
+            ->sum('detail_penerimaan.jumlah_terima');
+
+        $po->is_selesai = ($totalPesan > 0 && $totalTerima >=$totalPesan);
+    }
+
+    $users = DB::table('user')->get();
+
+    return view('penerimaan.index', compact('headerPenerimaan', 'pengadaans', 'users'));
+})->name('penerimaan.index');
+
 Route::post('penerimaan/store', function (Request $request) {
     try {
-        $firstUser = DB::table('user')->first();
-        $userId = $firstUser ? $firstUser->iduser : 1;
+        if (!$request->idpengadaan) {
+            return back()->with('error', 'Silakan pilih nomor pengadaan terlebih dahulu!');
+        }
+
+        $userId =$request->iduser;
+        if (!$userId) {
+            $firstUser = DB::table('user')->first();$userId = $firstUser ? $firstUser->iduser : 1;
+        }
 
         $idpenerimaan = DB::table('penerimaan')->insertGetId([
             'created_at'  => now(),
-            'status'      => '1',
+            'status'      => 'F',
             'idpengadaan' => $request->idpengadaan,
             'iduser'      => $userId
         ]);
 
-        return redirect()->route('penerimaan.detail', $idpenerimaan);
+        return redirect()->route('penerimaan.detail', $idpenerimaan)->with('success', 'Header penerimaan berhasil dibuat! Silakan input detail barang.');
     } catch (\Exception $e) {
         return back()->withInput()->with('error', 'Gagal membuat penerimaan: ' . $e->getMessage());
     }
 })->name('penerimaan.store');
 
-// Halaman Detail Penerimaan (Validasi Sisa Kuota PO)
-Route::get('penerimaan/{id}/detail', function ($id) {
-    $penerimaan = DB::table('penerimaan')
+Route::get('penerimaan/{id}/detail', function ($id) {$penerimaan = DB::table('penerimaan')
         ->leftJoin('pengadaan', 'penerimaan.idpengadaan', '=', 'pengadaan.idpengadaan')
         ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
         ->leftJoin('user', 'penerimaan.iduser', '=', 'user.iduser')
@@ -196,7 +224,6 @@ Route::get('penerimaan/{id}/detail', function ($id) {
         return redirect()->route('penerimaan.index')->with('error', 'Data penerimaan tidak ditemukan.');
     }
 
-    // Ambil detail barang yang SUDAH DITERIMA pada penerimaan ini
     $details = DB::table('detail_penerimaan')
         ->join('barang', 'detail_penerimaan.barang_idbarang', '=', 'barang.idbarang')
         ->select('detail_penerimaan.*', 'barang.nama as nama_barang')
@@ -204,40 +231,35 @@ Route::get('penerimaan/{id}/detail', function ($id) {
         ->orderBy('detail_penerimaan.iddetail_penerimaan', 'asc')
         ->get();
 
-    // HANYA ambil barang yang ADA di PO Pengadaan terkait beserta kuota pesanannya
     $barangsPO = DB::table('detail_pengadaan')
         ->join('barang', 'detail_pengadaan.idbarang', '=', 'barang.idbarang')
         ->where('detail_pengadaan.idpengadaan', $penerimaan->idpengadaan)
         ->select('barang.idbarang', 'barang.nama', 'detail_pengadaan.jumlah as jumlah_pesan')
         ->get();
 
-    // Hitung sisa kuota yang belum diterima untuk tiap barang di PO ini
-    foreach ($barangsPO as $b) {
-        $totalSudahTerima = DB::table('detail_penerimaan')
+    foreach ($barangsPO as $b) {$totalSudahTerima = DB::table('detail_penerimaan')
             ->join('penerimaan', 'detail_penerimaan.idpenerimaan', '=', 'penerimaan.idpenerimaan')
             ->where('penerimaan.idpengadaan', $penerimaan->idpengadaan)
             ->where('detail_penerimaan.barang_idbarang', $b->idbarang)
             ->sum('detail_penerimaan.jumlah_terima');
 
-        $b->sisa_kuota = max(0, $b->jumlah_pesan - $totalSudahTerima);
+        $b->sisa_kuota = max(0, $b->jumlah_pesan -$totalSudahTerima);
     }
 
     return view('penerimaan.detail', compact('penerimaan', 'details', 'barangsPO'));
 })->name('penerimaan.detail');
 
-// Simpan Tambah Detail Barang Masuk (Validasi Ketat Barang & Sisa Kuota PO)
-Route::post('penerimaan/{id}/detail/store', function (Request $request, $id) {
+Route::post('penerimaan/{id}/detail/store', function (Request $request,$id) {
     try {
-        $penerimaan = DB::table('penerimaan')->where('idpenerimaan', $id)->first();
+        $penerimaan = DB::table('penerimaan')->where('idpenerimaan',$id)->first();
         if (!$penerimaan) {
             return back()->with('error', 'Transaksi penerimaan tidak valid.');
         }
 
-        $idbarang = $request->idbarang;
-        $jumlahTerima = (int) $request->jumlah_terima;
-        $hargaTerima = (int) $request->harga_satuan_terima;
+        $idbarang =$request->idbarang;
+        $jumlahTerima = (int)$request->jumlah_terima;
+        $hargaTerima = (int)$request->harga_satuan_terima;
 
-        // 1. Validasi: Apakah barang ini terdaftar di PO Pengadaan terkait?
         $detailPO = DB::table('detail_pengadaan')
             ->where('idpengadaan', $penerimaan->idpengadaan)
             ->where('idbarang', $idbarang)
@@ -247,22 +269,20 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request, $id) {
             return back()->with('error', 'Barang ini tidak ada dalam daftar PO Pengadaan #' . $penerimaan->idpengadaan . '! Tidak dapat diterima.');
         }
 
-        // 2. Validasi: Hitung total yang sudah diterima untuk barang ini di seluruh penerimaan pada PO yang sama
         $totalSudahDiterima = DB::table('detail_penerimaan')
             ->join('penerimaan', 'detail_penerimaan.idpenerimaan', '=', 'penerimaan.idpenerimaan')
             ->where('penerimaan.idpengadaan', $penerimaan->idpengadaan)
             ->where('detail_penerimaan.barang_idbarang', $idbarang)
             ->sum('detail_penerimaan.jumlah_terima');
 
-        $sisaBolehDiterima = $detailPO->jumlah - $totalSudahDiterima;
+        $sisaBolehDiterima = $detailPO->jumlah -$totalSudahDiterima;
 
-        if ($jumlahTerima > $sisaBolehDiterima) {
+        if ($jumlahTerima >$sisaBolehDiterima) {
             return back()->with('error', "Jumlah penerimaan ({$jumlahTerima}) melebihi kuota pesanan! Sisa pesanan di PO hanya {$sisaBolehDiterima}.");
         }
 
         $subtotal = $jumlahTerima * $hargaTerima;
 
-        // 3. Simpan ke detail_penerimaan (Trigger kartu stok otomatis aktif)
         DB::table('detail_penerimaan')->insert([
             'idpenerimaan'        => $id,
             'barang_idbarang'     => $idbarang,
@@ -277,9 +297,8 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request, $id) {
     }
 })->name('penerimaan.detail.store');
 
-// Edit Header Penerimaan
 Route::get('penerimaan/{id}/edit', function ($id) {
-    $penerimaan = DB::table('penerimaan')->where('idpenerimaan', $id)->first();
+    $penerimaan = DB::table('penerimaan')->where('idpenerimaan',$id)->first();
     if (!$penerimaan) {
         return redirect()->route('penerimaan.index')->with('error', 'Data tidak ditemukan.');
     }
@@ -290,17 +309,19 @@ Route::get('penerimaan/{id}/edit', function ($id) {
         ->orderBy('pengadaan.idpengadaan', 'desc')
         ->get();
 
-    return view('penerimaan.edit', compact('penerimaan', 'pengadaans'));
+    $users = DB::table('user')->get();
+
+    return view('penerimaan.edit', compact('penerimaan', 'pengadaans', 'users'));
 })->name('penerimaan.edit');
 
-// Simpan Update Header Penerimaan
-Route::put('penerimaan/{id}/update', function (Request $request, $id) {
+Route::put('penerimaan/{id}/update', function (Request $request,$id) {
     try {
         DB::table('penerimaan')
             ->where('idpenerimaan', $id)
             ->update([
                 'idpengadaan' => $request->idpengadaan,
-                'status'      => $request->status ?? '1'
+                'iduser'      => $request->iduser,
+                'status'      => $request->status ?? 'F'
             ]);
 
         return redirect()->route('penerimaan.detail', $id)->with('success', 'Header penerimaan berhasil diperbarui!');
@@ -309,7 +330,6 @@ Route::put('penerimaan/{id}/update', function (Request $request, $id) {
     }
 })->name('penerimaan.update');
 
-// Hapus Satu Transaksi Penerimaan Beserta Seluruh Detailnya
 Route::delete('penerimaan/{id}/destroy', function ($id) {
     try {
         DB::transaction(function () use ($id) {
@@ -323,10 +343,9 @@ Route::delete('penerimaan/{id}/destroy', function ($id) {
     }
 })->name('penerimaan.destroy');
 
-// Hapus Satu Baris Detail Item Barang Masuk
 Route::delete('penerimaan/detail/{iddetail}/destroy', function ($iddetail) {
     try {
-        $detail = DB::table('detail_penerimaan')->where('iddetail_penerimaan', $iddetail)->first();
+        $detail = DB::table('detail_penerimaan')->where('iddetail_penerimaan',$iddetail)->first();
         if ($detail) {
             DB::table('detail_penerimaan')->where('iddetail_penerimaan', $iddetail)->delete();
             return back()->with('success', 'Item barang berhasil dihapus dari detail penerimaan.');

@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detail Penerimaan #{{ $penerimaan->idpenerimaan }} - SIMBA</title>
 
-    <!-- Bootstrap 5 CSS & FontAwesome -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Google Fonts Nunito -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -29,7 +27,6 @@
             overflow-x: hidden;
         }
 
-        /* Top Navbar */
         .top-navbar {
             background-color: var(--primary-blue);
             height: 60px;
@@ -73,7 +70,6 @@
             cursor: pointer;
         }
 
-        /* Sidebar Kiri */
         .sidebar {
             width: 230px;
             min-height: calc(100vh - 60px);
@@ -110,7 +106,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Konten Utama */
         .main-wrapper {
             padding: 2rem;
             flex-grow: 1;
@@ -157,7 +152,6 @@
 </head>
 <body>
 
-    <!-- TOP NAVBAR -->
     <header class="top-navbar">
         <a href="/" class="brand-text">SIMBA</a>
         <div class="search-box d-none d-md-block">
@@ -171,7 +165,6 @@
     </header>
 
     <div class="d-flex">
-        <!-- SIDEBAR KIRI -->
         <aside class="sidebar">
             <ul class="list-unstyled p-0 m-0">
                 <li>
@@ -199,10 +192,16 @@
                         <span>Kartu Stok</span>
                     </a>
                 </li>
+                <li class="menu-heading">PENGATURAN</li>
+                <li>
+                    <a href="{{ route('margin-penjualan.index') }}" class="sidebar-link">
+                        <i class="fa-solid fa-percent"></i>
+                        <span>Margin Penjualan</span>
+                    </a>
+                </li>
             </ul>
         </aside>
 
-        <!-- KONTEN UTAMA DUA KOLOM -->
         <main class="main-wrapper">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <div>
@@ -214,7 +213,6 @@
                 </a>
             </div>
 
-            <!-- Notifikasi Sukses / Gagal -->
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
                     <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
@@ -230,7 +228,6 @@
             @endif
 
             <div class="row g-4">
-                <!-- KOLOM KIRI: RINGKASAN TRANSAKSI -->
                 <div class="col-lg-5">
                     <div class="card-custom h-100">
                         <h5 class="fw-bold mb-3 border-bottom pb-2">Ringkasan</h5>
@@ -250,7 +247,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">Dibuat oleh:</td>
-                                <td>{{ $penerimaan->username ?? 'admin' }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ $penerimaan->username ?? 'admin' }}</span></td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Status:</td>
@@ -277,7 +274,6 @@
                             </div>
                         </div>
 
-                        <!-- Tombol Aksi Header & Mutasi Stok -->
                         <div class="d-flex flex-column gap-2">
                             <a href="/kartu-stok" class="btn btn-outline-primary w-100 fw-bold">
                                 <i class="fa-solid fa-clipboard-list me-1"></i> Cek Mutasi Kartu Stok
@@ -298,9 +294,7 @@
                     </div>
                 </div>
 
-                <!-- KOLOM KANAN: TAMBAH DETAIL & TABEL BARANG MASUK -->
                 <div class="col-lg-7">
-                    <!-- Form Tambah Detail Barang (Tervalidasi Sesuai PO) -->
                     <div class="card-custom mb-4">
                         <h5 class="fw-bold mb-3 border-bottom pb-2">Tambah Detail</h5>
                         <form action="{{ route('penerimaan.detail.store', $penerimaan->idpenerimaan) }}" method="POST">
@@ -337,7 +331,6 @@
                         </form>
                     </div>
 
-                    <!-- Tabel Daftar Detail Barang Masuk -->
                     <div class="card-custom p-0 overflow-hidden">
                         <div class="p-3 bg-light border-bottom">
                             <h6 class="fw-bold mb-0">Daftar Detail</h6>
@@ -388,7 +381,6 @@
         </main>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

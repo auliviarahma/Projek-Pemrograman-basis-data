@@ -9,13 +9,22 @@ use Illuminate\Support\Facades\DB;
 
 class MarginPenjualanController extends Controller
 {
-    // READ: Memanggil SQL View view_margin_penjualan
+    // READ: Memanggil SQL View view_margin_penjualan (dengan fallback ke tabel jika view belum ada)
     public function index()
     {
-        $margin = DB::table('view_margin_penjualan')
-                    ->orderBy('idmargin_penjualan', 'desc')
-                    ->get();
-                    
+        try {
+            $margin = DB::table('view_margin_penjualan')
+                ->orderBy('idmargin_penjualan', 'desc')
+                ->get();
+        } catch (\Exception $e) {
+            // Fallback membaca langsung dari tabel margin_penjualan jika view belum terpasang
+            $margin = DB::table('margin_penjualan')
+                ->leftJoin('user', 'margin_penjualan.iduser', '=', 'user.iduser')
+                ->select('margin_penjualan.*', 'user.username')
+                ->orderBy('margin_penjualan.idmargin_penjualan', 'desc')
+                ->get();
+        }
+
         return view('margin_penjualan.index', compact('margin'));
     }
 
@@ -33,10 +42,17 @@ class MarginPenjualanController extends Controller
             'iduser' => 'nullable|exists:user,iduser',
         ]);
 
+        // Fallback user jika tidak memilih user
+        $userId = $request->iduser;
+        if (!$userId) {
+            $firstUser = User::first();
+            $userId = $firstUser ? $firstUser->iduser : 1;
+        }
+
         MarginPenjualan::create([
             'persen'     => $request->persen,
             'status'     => $request->status,
-            'iduser'     => $request->iduser,
+            'iduser'     => $userId,
             'created_at' => now(),
         ]);
 
@@ -59,10 +75,13 @@ class MarginPenjualanController extends Controller
         ]);
 
         $margin = MarginPenjualan::findOrFail($id);
+        
+        $userId = $request->iduser ?? $margin->iduser;
+
         $margin->update([
             'persen' => $request->persen,
             'status' => $request->status,
-            'iduser' => $request->iduser,
+            'iduser' => $userId,
         ]);
 
         return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil diperbarui');
@@ -75,13 +94,25 @@ class MarginPenjualanController extends Controller
         return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil dihapus');
     }
 
-    // STORED PROCEDURE: Menjalankan sp_set_margin_aktif untuk mengubah status aktif
+    // STORED PROCEDURE: Menjalankan SP untuk mengaktifkan satu margin & menonaktifkan yang lain
     public function aktifkan(string $id)
     {
-        // Mengeksekusi Stored Procedure menggunakan DB::statement dengan parameter ID
-        DB::statement("CALL sp_set_margin_aktif(?)", [$id]);
+        try {
+            // Eksekusi Stored Procedure
+            DB::statement("CALL sp_set_margin_aktif(?)", [$id]);
 
-        return redirect()->route('margin-penjualan.index')
-            ->with('success', 'Margin aktif berhasil diperbarui melalui Stored Procedure!');
+            return redirect()->route('margin-penjualan.index')
+                ->with('success', 'Margin aktif berhasil diperbarui melalui Stored Procedure!');
+        } catch (\Exception $e) {
+            // Alternatif jika nama SP di DB adalah sp_aktifkan_margin
+            try {
+                DB::statement("CALL sp_aktifkan_margin(?)", [$id]);
+                return redirect()->route('margin-penjualan.index')
+                    ->with('success', 'Margin aktif berhasil diperbarui!');
+            } catch (\Exception $ex) {
+                return redirect()->route('margin-penjualan.index')
+                    ->with('error', 'Gagal memicu Stored Procedure: ' . $ex->getMessage());
+            }
+        }
     }
 }

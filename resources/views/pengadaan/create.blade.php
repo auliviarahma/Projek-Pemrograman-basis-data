@@ -3,175 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Pengadaan Barang - SIMBA</title>
+    <title>Tambah Pengadaan Baru - SIMBA</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --primary-blue: #0284c7;
-            --blue-outline: #bae6fd;
+            --primary-blue-hover: #0369a1;
             --bg-body: #f8fafc;
             --text-dark: #1e293b;
         }
-        body { 
-            font-family: 'Nunito', sans-serif; 
-            background-color: var(--bg-body); 
-            color: var(--text-dark); 
-            margin: 0; 
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            margin: 0;
             padding: 0;
-            overflow-x: hidden;
         }
-        .top-navbar { 
-            background-color: var(--primary-blue); 
-            height: 60px; 
-            padding: 0 1.5rem; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
+
+        .top-navbar {
+            background-color: var(--primary-blue);
+            height: 60px;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .brand-text { 
-            color: #ffffff; 
-            font-weight: 800; 
-            font-size: 1.25rem; 
-            text-decoration: none; 
+
+        .brand-text {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+            text-decoration: none;
         }
-        .sidebar { 
-            width: 230px; 
-            min-height: calc(100vh - 60px); 
-            background-color: #ffffff; 
-            border-right: 1px solid #f0f0f0; 
-            padding-top: 1.5rem; 
+
+        .main-wrapper {
+            max-width: 800px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
         }
-        .sidebar-link { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            padding: 10px 1.5rem; 
-            color: #555555; 
-            text-decoration: none; 
-            font-weight: 600; 
-            font-size: 0.9rem; 
+
+        .card-custom {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .btn-blue {
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            font-weight: 700;
+            border-radius: 6px;
+            border: none;
             transition: all 0.2s;
         }
-        .sidebar-link:hover, .sidebar-link.active { 
-            color: var(--primary-blue); 
+
+        .btn-blue:hover {
+            background-color: var(--primary-blue-hover);
+            color: #ffffff;
         }
-        .sidebar-link.active { 
-            font-weight: 800; 
-        }
-        .menu-heading { 
-            padding: 1rem 1.5rem 0.25rem; 
-            font-size: 0.72rem; 
-            font-weight: 800; 
-            color: #aaaaaa; 
-        }
-        .main-wrapper { 
-            padding: 2rem; 
-            flex-grow: 1; 
-        }
-        .card-form { 
-            background-color: #ffffff; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 12px; 
-            padding: 2rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02); 
-            max-width: 700px; 
-        }
-        .btn-blue { 
-            background-color: var(--primary-blue); 
-            color: #fff; 
-            font-weight: 700; 
-            border-radius: 6px; 
-        }
-        .btn-blue:hover { 
-            background-color: #0369a1; 
-            color: #fff; 
+
+        .calc-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
         }
     </style>
 </head>
 <body>
+
     <header class="top-navbar">
         <a href="/" class="brand-text">SIMBA</a>
-        <div class="text-white d-flex align-items-center gap-3">
-            <i class="fa-regular fa-bell"></i>
-            <i class="fa-regular fa-user"></i>
-        </div>
+        <span class="text-white small fw-bold">Modul Pengadaan (PO)</span>
     </header>
 
-    <div class="d-flex">
-        <aside class="sidebar">
-            <ul class="list-unstyled p-0 m-0">
-                <li><a href="/" class="sidebar-link"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a></li>
-                <li class="menu-heading">TRANSAKSI</li>
-                <li><a href="/pengadaan" class="sidebar-link active"><i class="fa-solid fa-cart-shopping" style="color: var(--primary-blue);"></i><span>Pengadaan</span></a></li>
-                <li><a href="/penerimaan" class="sidebar-link"><i class="fa-solid fa-truck-ramp-box"></i><span>Penerimaan</span></a></li>
-                <li><a href="/kartu-stok" class="sidebar-link"><i class="fa-solid fa-clipboard-list"></i><span>Kartu Stok</span></a></li>
-            </ul>
-        </aside>
-
-        <main class="main-wrapper">
+    <main class="main-wrapper">
+        <div class="card-custom">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <div>
-                    <h3 class="fw-bold mb-1" style="color: #0f172a;">Form Pengadaan Barang</h3>
-                    <p class="text-secondary small mb-0">Pencatatan pemesanan barang (PO) ke vendor penyedia</p>
+                    <h4 class="fw-bold mb-1" style="color: #0f172a;">Buat Pengadaan (PO) Baru</h4>
+                    <p class="text-muted small mb-0">Input dokumen Purchase Order untuk pemesanan barang ke vendor</p>
                 </div>
-                <a href="/pengadaan" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Kembali</a>
+                <a href="{{ route('pengadaan.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Kembali
+                </a>
             </div>
 
             @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
-            <div class="card-form">
-                <form action="{{ route('pengadaan.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Pilih Vendor</label>
+            <form action="{{ route('pengadaan.store') }}" method="POST">
+                @csrf
+
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="form-label fw-bold small text-muted">VENDOR / SUPLIER</label>
                         <select name="idvendor" class="form-select" required>
                             <option value="">-- Pilih Vendor --</option>
-                            @forelse ($vendors as $v)
-                                <option value="{{ $v->idvendor }}">{{ $v->nama_vendor }}</option>
-                            @empty
-                                <option value="" disabled>Belum ada vendor</option>
-                            @endforelse
+                            @foreach ($vendors as $v)
+                                <option value="{{ $v->idvendor }}" {{ old('idvendor') == $v->idvendor ? 'selected' : '' }}>
+                                    {{ $v->nama_vendor }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Pilih Barang</label>
-                        <select name="idbarang" class="form-select" required>
-                            <option value="">-- Pilih Barang --</option>
-                            @forelse ($barangs as $b)
-                                <option value="{{ $b->idbarang }}">{{ $b->nama }}</option>
-                            @empty
-                                <option value="" disabled>Belum ada master barang</option>
-                            @endforelse
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">DIBUAT OLEH (USER)</label>
+                        <select name="iduser" class="form-select" required>
+                            <option value="">-- Pilih Petugas / User --</option>
+                            @foreach ($users as $u)
+                                <option value="{{ $u->iduser }}" {{ old('iduser') == $u->iduser ? 'selected' : '' }}>
+                                    {{ $u->username }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
+                </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Jumlah Beli</label>
-                            <input type="number" name="jumlah" class="form-control" placeholder="Contoh: 50" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Harga Satuan (Rp)</label>
-                            <input type="number" name="harga_satuan" class="form-control" placeholder="Contoh: 15000" min="0" required>
-                        </div>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">BARANG YANG DIPESAN</label>
+                    <select name="idbarang" class="form-select" required>
+                        <option value="">-- Pilih Barang --</option>
+                        @foreach ($barangs as $b)
+                            <option value="{{ $b->idbarang }}" {{ old('idbarang') == $b->idbarang ? 'selected' : '' }}>
+                                {{ $b->nama }} (ID: {{ $b->idbarang }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="pt-3 border-top mt-2 text-end">
-                        <button type="submit" class="btn btn-blue px-4"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Pengadaan</button>
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="form-label fw-bold small text-muted">JUMLAH PESANAN</label>
+                        <input type="number" name="jumlah" id="jumlah" class="form-control" placeholder="Contoh: 50" min="1" value="{{ old('jumlah') }}" required>
                     </div>
-                </form>
-            </div>
-        </main>
-    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">HARGA SATUAN (RP)</label>
+                        <input type="number" name="harga_satuan" id="harga_satuan" class="form-control" placeholder="Contoh: 25000" min="0" value="{{ old('harga_satuan') }}" required>
+                    </div>
+                </div>
+
+                <div class="calc-box mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Subtotal Nilai:</span>
+                        <span class="fw-semibold" id="txtSubtotal">Rp0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">PPN (11%):</span>
+                        <span class="fw-semibold" id="txtPPN">Rp0</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-2">
+                        <span class="fw-bold">Total Nilai Pengadaan:</span>
+                        <span class="fw-bold text-primary fs-5" id="txtTotal">Rp0</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-blue w-100 py-2">
+                    <i class="fa-solid fa-cart-plus me-1"></i> Simpan & Terbitkan PO Pengadaan
+                </button>
+            </form>
+        </div>
+    </main>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const inputJumlah = document.getElementById('jumlah');
+        const inputHarga = document.getElementById('harga_satuan');
+        const txtSubtotal = document.getElementById('txtSubtotal');
+        const txtPPN = document.getElementById('txtPPN');
+        const txtTotal = document.getElementById('txtTotal');
+
+        function hitungTotal() {
+            const jml = parseFloat(inputJumlah.value) || 0;
+            const hrg = parseFloat(inputHarga.value) || 0;
+            const subtotal = jml * hrg;
+            const ppn = Math.round(subtotal * 0.11);
+            const total = subtotal + ppn;
+
+            txtSubtotal.innerText = 'Rp' + subtotal.toLocaleString('id-ID');
+            txtPPN.innerText = 'Rp' + ppn.toLocaleString('id-ID');
+            txtTotal.innerText = 'Rp' + total.toLocaleString('id-ID');
+        }
+
+        inputJumlah.addEventListener('input', hitungTotal);
+        inputHarga.addEventListener('input', hitungTotal);
+    </script>
 </body>
 </html>
