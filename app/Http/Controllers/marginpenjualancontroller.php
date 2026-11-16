@@ -9,21 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class MarginPenjualanController extends Controller
 {
-    // READ: Memanggil SQL View view_margin_penjualan (dengan fallback ke tabel jika view belum ada)
+    // READ: Murni membaca dari SQL View view_margin_penjualan (sesuai aturan dosen)
     public function index()
     {
-        try {
-            $margin = DB::table('view_margin_penjualan')
-                ->orderBy('idmargin_penjualan', 'desc')
-                ->get();
-        } catch (\Exception $e) {
-            // Fallback membaca langsung dari tabel margin_penjualan jika view belum terpasang
-            $margin = DB::table('margin_penjualan')
-                ->leftJoin('user', 'margin_penjualan.iduser', '=', 'user.iduser')
-                ->select('margin_penjualan.*', 'user.username')
-                ->orderBy('margin_penjualan.idmargin_penjualan', 'desc')
-                ->get();
-        }
+        $margin = DB::table('view_margin_penjualan')
+            ->orderBy('idmargin_penjualan', 'desc')
+            ->get();
 
         return view('margin_penjualan.index', compact('margin'));
     }
@@ -38,7 +29,7 @@ class MarginPenjualanController extends Controller
     {
         $request->validate([
             'persen' => 'required|numeric|min:0',
-            'status' => 'required|numeric',
+            'status' => 'required|in:0,1',
             'iduser' => 'nullable|exists:user,iduser',
         ]);
 
@@ -49,14 +40,20 @@ class MarginPenjualanController extends Controller
             $userId = $firstUser ? $firstUser->iduser : 1;
         }
 
-        MarginPenjualan::create([
+        $marginBaru = MarginPenjualan::create([
             'persen'     => $request->persen,
-            'status'     => $request->status,
+            'status'     => 0, // Set 0 dulu agar rotasi ditangani SP
             'iduser'     => $userId,
             'created_at' => now(),
         ]);
 
-        return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil ditambahkan');
+        // Jika user memilih status Aktif (1), langsung panggil SP agar margin lain otomatis mati
+        if ((int) $request->status === 1) {
+            DB::statement("CALL sp_set_margin_aktif(?)", [$marginBaru->idmargin_penjualan]);
+        }
+
+        return redirect()->route('margin-penjualan.index')
+            ->with('success', 'Margin penjualan berhasil ditambahkan');
     }
 
     public function edit(string $id)
@@ -70,12 +67,11 @@ class MarginPenjualanController extends Controller
     {
         $request->validate([
             'persen' => 'required|numeric|min:0',
-            'status' => 'required|numeric',
+            'status' => 'required|in:0,1',
             'iduser' => 'nullable|exists:user,iduser',
         ]);
 
         $margin = MarginPenjualan::findOrFail($id);
-        
         $userId = $request->iduser ?? $margin->iduser;
 
         $margin->update([
@@ -84,35 +80,34 @@ class MarginPenjualanController extends Controller
             'iduser' => $userId,
         ]);
 
-        return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil diperbarui');
+        // Jika status diubah menjadi Aktif (1), panggil SP untuk menonaktifkan margin lainnya
+        if ((int) $request->status === 1) {
+            DB::statement("CALL sp_set_margin_aktif(?)", [$id]);
+        }
+
+        return redirect()->route('margin-penjualan.index')
+            ->with('success', 'Margin penjualan berhasil diperbarui');
     }
 
     public function destroy(string $id)
     {
         $margin = MarginPenjualan::findOrFail($id);
         $margin->delete();
-        return redirect()->route('margin-penjualan.index')->with('success', 'Margin penjualan berhasil dihapus');
+        return redirect()->route('margin-penjualan.index')
+            ->with('success', 'Margin penjualan berhasil dihapus');
     }
 
-    // STORED PROCEDURE: Menjalankan SP untuk mengaktifkan satu margin & menonaktifkan yang lain
+    // STORED PROCEDURE: Menjalankan sp_set_margin_aktif untuk merotasi status margin
     public function aktifkan(string $id)
     {
         try {
-            // Eksekusi Stored Procedure
             DB::statement("CALL sp_set_margin_aktif(?)", [$id]);
 
             return redirect()->route('margin-penjualan.index')
                 ->with('success', 'Margin aktif berhasil diperbarui melalui Stored Procedure!');
         } catch (\Exception $e) {
-            // Alternatif jika nama SP di DB adalah sp_aktifkan_margin
-            try {
-                DB::statement("CALL sp_aktifkan_margin(?)", [$id]);
-                return redirect()->route('margin-penjualan.index')
-                    ->with('success', 'Margin aktif berhasil diperbarui!');
-            } catch (\Exception $ex) {
-                return redirect()->route('margin-penjualan.index')
-                    ->with('error', 'Gagal memicu Stored Procedure: ' . $ex->getMessage());
-            }
+            return redirect()->route('margin-penjualan.index')
+                ->with('error', 'Gagal memicu Stored Procedure sp_set_margin_aktif: ' . $e->getMessage());
         }
     }
 }

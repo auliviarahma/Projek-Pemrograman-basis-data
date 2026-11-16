@@ -22,16 +22,19 @@ use App\Http\Controllers\MarginPenjualanController;
 // 1. DASHBOARD UTAMA
 // ==========================================
 Route::get('/', function () {
-    $totalSatuan = Satuan::count();$totalBarang = Barang::count();
-    $totalVendor = Vendor::count();$totalRole   = Role::count();
-    $totalUser   = User::count();$totalMargin = MarginPenjualan::count();
+    $totalSatuan = Satuan::count();
+    $totalBarang = Barang::count();
+    $totalVendor = Vendor::count();
+    $totalRole   = Role::count();
+    $totalUser   = User::count();
+    $totalMargin = MarginPenjualan::count();
 
     return view('dashboard', compact(
-        'totalSatuan', 
-        'totalBarang', 
-        'totalVendor', 
-        'totalRole', 
-        'totalUser', 
+        'totalSatuan',
+        'totalBarang',
+        'totalVendor',
+        'totalRole',
+        'totalUser',
         'totalMargin'
     ));
 })->name('dashboard');
@@ -75,26 +78,28 @@ Route::get('kartu-stok', function () {
 })->name('kartu-stok.index');
 
 // ==========================================
-// 4. TRANSAKSI PENGADAAN (DILENGKAPI USER)
+// 4. TRANSAKSI PENGADAAN (MULTI-BARANG & V_PENGADAAN)
 // ==========================================
 Route::get('pengadaan', function () {
-    $dataPengadaan = DB::table('pengadaan')
-        ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
-        ->leftJoin('user', 'pengadaan.user_iduser', '=', 'user.iduser')
-        ->select(
-            'pengadaan.*',
-            'vendor.nama_vendor',
-            'user.username'
-        )
-        ->orderBy('pengadaan.idpengadaan', 'desc')
+    $rows = DB::table('v_pengadaan')
+        ->orderBy('idpengadaan', 'desc')
         ->get();
+
+    // Kelompokkan per idpengadaan karena 1 pengadaan bisa banyak barang
+    $dataPengadaan = $rows->groupBy('idpengadaan')->map(function ($items) {
+        $first = $items->first();
+        $first->daftar_barang = $items->pluck('nama_barang')->implode(', ');
+        $first->jumlah_item   = $items->count();
+        return $first;
+    })->values();
 
     return view('pengadaan.index', compact('dataPengadaan'));
 })->name('pengadaan.index');
 
 Route::get('pengadaan/create', function () {
-    $vendors = DB::table('vendor')->get();
-    $barangs = DB::table('barang')->get();$users   = DB::table('user')->get();
+    $vendors = DB::table('vendor')->where('status', '1')->get();
+    $barangs = DB::table('view_barang')->where('status', 1)->get();
+    $users   = DB::table('user')->get();
 
     return view('pengadaan.create', compact('vendors', 'barangs', 'users'));
 })->name('pengadaan.create');
@@ -102,33 +107,61 @@ Route::get('pengadaan/create', function () {
 Route::post('pengadaan/store', function (Request $request) {
     try {
         DB::transaction(function () use ($request) {
-            $jumlah = (int)$request->jumlah;
-            $harga = (int)$request->harga_satuan;
-            $subtotal = $jumlah * $harga;
-            $ppn = (int) ($subtotal * 0.11);$total = $subtotal +$ppn;
+            // Mendukung input multi-barang (array) maupun single-barang
+            $idBarangs = is_array($request->idbarang) ? $request->idbarang : [$request->idbarang];
+            $jumlahs   = is_array($request->jumlah) ? $request->jumlah : [$request->jumlah];
 
-            $userId =$request->iduser;
-            if (!$userId) {
-                $firstUser = DB::table('user')->first();$userId = $firstUser ? $firstUser->iduser : 1;
+            $subtotalKeseluruhan = 0;
+            $itemsSiapSimpan     = [];
+
+            foreach ($idBarangs as $i => $idBarang) {
+                if (!$idBarang) continue;
+                $qty = (int) ($jumlahs[$i] ?? 1);
+
+                // Acuan harga otomatis mengambil harga dasar dari master barang
+                $barangMaster = DB::table('view_barang')->where('idbarang', $idBarang)->first();
+                $harga        = $barangMaster ? (int) $barangMaster->harga : 0;
+                $sub          = $qty * $harga;
+
+                $subtotalKeseluruhan += $sub;
+                $itemsSiapSimpan[] = [
+                    'idbarang'     => $idBarang,
+                    'jumlah'       => $qty,
+                    'harga_satuan' => $harga,
+                    'sub_total'    => $sub,
+                ];
             }
 
+            $ppn   = (int) round($subtotalKeseluruhan * 0.11);
+            $total = $subtotalKeseluruhan + $ppn;
+
+            $userId = $request->iduser;
+            if (!$userId) {
+                $firstUser = DB::table('user')->first();
+                $userId = $firstUser ? $firstUser->iduser : 1;
+            }
+
+            // Insert header pengadaan -> status awal 'P' (Proses)
             $idpengadaan = DB::table('pengadaan')->insertGetId([
                 'timestamp'       => now(),
-                'status'          => '1',
-                'subtotal_nilai'  => $subtotal,
+                'status'          => 'P',
+                'subtotal_nilai'  => $subtotalKeseluruhan,
                 'ppn'             => $ppn,
                 'total_nilai'     => $total,
                 'user_iduser'     => $userId,
                 'vendor_idvendor' => $request->idvendor
             ]);
 
-            DB::table('detail_pengadaan')->insert([
-                'idpengadaan'  => $idpengadaan,
-                'idbarang'     => $request->idbarang,
-                'jumlah'       => $jumlah,
-                'harga_satuan' => $harga,
-                'sub_total'    => $subtotal
-            ]);
+            // Insert semua barang ke detail_pengadaan
+            foreach ($itemsSiapSimpan as $item) {
+                DB::table('detail_pengadaan')->insert([
+                    'idpengadaan'  => $idpengadaan,
+                    'idbarang'     => $item['idbarang'],
+                    'jumlah'       => $item['jumlah'],
+                    'harga_satuan' => $item['harga_satuan'],
+                    'sub_total'    => $item['sub_total']
+                ]);
+            }
         });
 
         return redirect()->route('pengadaan.index')->with('success', 'Pengadaan berhasil dibuat!');
@@ -137,8 +170,21 @@ Route::post('pengadaan/store', function (Request $request) {
     }
 })->name('pengadaan.store');
 
+Route::get('pengadaan/{id}/detail', function ($id) {
+    $details = DB::table('v_pengadaan')
+        ->where('idpengadaan', $id)
+        ->get();
+
+    if ($details->isEmpty()) {
+        return redirect()->route('pengadaan.index')->with('error', 'Data pengadaan tidak ditemukan.');
+    }
+
+    $header = $details->first();
+    return view('pengadaan.detail', compact('header', 'details'));
+})->name('pengadaan.detail');
+
 // ==========================================
-// 5. TRANSAKSI PENERIMAAN (TERPADU & USER)
+// 5. TRANSAKSI PENERIMAAN (MULTI-BARANG & SINKRON)
 // ==========================================
 Route::get('penerimaan', function () {
     $headerPenerimaan = DB::table('penerimaan')
@@ -163,7 +209,8 @@ Route::get('penerimaan', function () {
         ->orderBy('pengadaan.idpengadaan', 'desc')
         ->get();
 
-    foreach ($pengadaans as $po) {$totalPesan = DB::table('detail_pengadaan')
+    foreach ($pengadaans as $po) {
+        $totalPesan = DB::table('detail_pengadaan')
             ->where('idpengadaan', $po->idpengadaan)
             ->sum('jumlah');
 
@@ -172,7 +219,7 @@ Route::get('penerimaan', function () {
             ->where('penerimaan.idpengadaan', $po->idpengadaan)
             ->sum('detail_penerimaan.jumlah_terima');
 
-        $po->is_selesai = ($totalPesan > 0 && $totalTerima >=$totalPesan);
+        $po->is_selesai = ($totalPesan > 0 && $totalTerima >= $totalPesan);
     }
 
     $users = DB::table('user')->get();
@@ -186,25 +233,29 @@ Route::post('penerimaan/store', function (Request $request) {
             return back()->with('error', 'Silakan pilih nomor pengadaan terlebih dahulu!');
         }
 
-        $userId =$request->iduser;
+        $userId = $request->iduser;
         if (!$userId) {
-            $firstUser = DB::table('user')->first();$userId = $firstUser ? $firstUser->iduser : 1;
+            $firstUser = DB::table('user')->first();
+            $userId = $firstUser ? $firstUser->iduser : 1;
         }
 
+        // Status awal 'B' (Sebagian) hingga seluruh item PO diterima -> berubah 'S' (Selesai)
         $idpenerimaan = DB::table('penerimaan')->insertGetId([
             'created_at'  => now(),
-            'status'      => 'F',
+            'status'      => 'B',
             'idpengadaan' => $request->idpengadaan,
             'iduser'      => $userId
         ]);
 
-        return redirect()->route('penerimaan.detail', $idpenerimaan)->with('success', 'Header penerimaan berhasil dibuat! Silakan input detail barang.');
+        return redirect()->route('penerimaan.detail', $idpenerimaan)
+            ->with('success', 'Header penerimaan berhasil dibuat! Silakan input detail barang.');
     } catch (\Exception $e) {
         return back()->withInput()->with('error', 'Gagal membuat penerimaan: ' . $e->getMessage());
     }
 })->name('penerimaan.store');
 
-Route::get('penerimaan/{id}/detail', function ($id) {$penerimaan = DB::table('penerimaan')
+Route::get('penerimaan/{id}/detail', function ($id) {
+    $penerimaan = DB::table('penerimaan')
         ->leftJoin('pengadaan', 'penerimaan.idpengadaan', '=', 'pengadaan.idpengadaan')
         ->leftJoin('vendor', 'pengadaan.vendor_idvendor', '=', 'vendor.idvendor')
         ->leftJoin('user', 'penerimaan.iduser', '=', 'user.iduser')
@@ -231,34 +282,40 @@ Route::get('penerimaan/{id}/detail', function ($id) {$penerimaan = DB::table('pe
         ->orderBy('detail_penerimaan.iddetail_penerimaan', 'asc')
         ->get();
 
+    // Mengambil barang & harga_satuan dari detail_pengadaan sebagai acuan harga terima
     $barangsPO = DB::table('detail_pengadaan')
         ->join('barang', 'detail_pengadaan.idbarang', '=', 'barang.idbarang')
         ->where('detail_pengadaan.idpengadaan', $penerimaan->idpengadaan)
-        ->select('barang.idbarang', 'barang.nama', 'detail_pengadaan.jumlah as jumlah_pesan')
+        ->select(
+            'barang.idbarang',
+            'barang.nama',
+            'detail_pengadaan.jumlah as jumlah_pesan',
+            'detail_pengadaan.harga_satuan'
+        )
         ->get();
 
-    foreach ($barangsPO as $b) {$totalSudahTerima = DB::table('detail_penerimaan')
+    foreach ($barangsPO as $b) {
+        $totalSudahTerima = DB::table('detail_penerimaan')
             ->join('penerimaan', 'detail_penerimaan.idpenerimaan', '=', 'penerimaan.idpenerimaan')
             ->where('penerimaan.idpengadaan', $penerimaan->idpengadaan)
             ->where('detail_penerimaan.barang_idbarang', $b->idbarang)
             ->sum('detail_penerimaan.jumlah_terima');
 
-        $b->sisa_kuota = max(0, $b->jumlah_pesan -$totalSudahTerima);
+        $b->sisa_kuota = max(0, $b->jumlah_pesan - $totalSudahTerima);
     }
 
     return view('penerimaan.detail', compact('penerimaan', 'details', 'barangsPO'));
 })->name('penerimaan.detail');
 
-Route::post('penerimaan/{id}/detail/store', function (Request $request,$id) {
+Route::post('penerimaan/{id}/detail/store', function (Request $request, $id) {
     try {
-        $penerimaan = DB::table('penerimaan')->where('idpenerimaan',$id)->first();
+        $penerimaan = DB::table('penerimaan')->where('idpenerimaan', $id)->first();
         if (!$penerimaan) {
             return back()->with('error', 'Transaksi penerimaan tidak valid.');
         }
 
-        $idbarang =$request->idbarang;
-        $jumlahTerima = (int)$request->jumlah_terima;
-        $hargaTerima = (int)$request->harga_satuan_terima;
+        $idbarang     = $request->idbarang;
+        $jumlahTerima = (int) $request->jumlah_terima;
 
         $detailPO = DB::table('detail_pengadaan')
             ->where('idpengadaan', $penerimaan->idpengadaan)
@@ -266,8 +323,13 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request,$id) {
             ->first();
 
         if (!$detailPO) {
-            return back()->with('error', 'Barang ini tidak ada dalam daftar PO Pengadaan #' . $penerimaan->idpengadaan . '! Tidak dapat diterima.');
+            return back()->with('error', 'Barang ini tidak ada dalam daftar PO Pengadaan #' . $penerimaan->idpengadaan . '!');
         }
+
+        // Harga terima default dari detail_pengadaan jika tidak diubah user
+        $hargaTerima = $request->filled('harga_satuan_terima')
+            ? (int) $request->harga_satuan_terima
+            : (int) $detailPO->harga_satuan;
 
         $totalSudahDiterima = DB::table('detail_penerimaan')
             ->join('penerimaan', 'detail_penerimaan.idpenerimaan', '=', 'penerimaan.idpenerimaan')
@@ -275,14 +337,15 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request,$id) {
             ->where('detail_penerimaan.barang_idbarang', $idbarang)
             ->sum('detail_penerimaan.jumlah_terima');
 
-        $sisaBolehDiterima = $detailPO->jumlah -$totalSudahDiterima;
+        $sisaBolehDiterima = $detailPO->jumlah - $totalSudahDiterima;
 
-        if ($jumlahTerima >$sisaBolehDiterima) {
+        if ($jumlahTerima > $sisaBolehDiterima) {
             return back()->with('error', "Jumlah penerimaan ({$jumlahTerima}) melebihi kuota pesanan! Sisa pesanan di PO hanya {$sisaBolehDiterima}.");
         }
 
         $subtotal = $jumlahTerima * $hargaTerima;
 
+        // Trigger otomatis: tambah kartu_stok, update harga master barang jika berubah, dan update status pengadaan & penerimaan
         DB::table('detail_penerimaan')->insert([
             'idpenerimaan'        => $id,
             'barang_idbarang'     => $idbarang,
@@ -291,14 +354,14 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request,$id) {
             'sub_total_terima'    => $subtotal
         ]);
 
-        return back()->with('success', 'Barang berhasil diterima dan mutasi stok otomatis bertambah!');
+        return back()->with('success', 'Barang berhasil diterima! Stok, harga barang, dan status pengadaan otomatis diperbarui.');
     } catch (\Exception $e) {
         return back()->with('error', 'Gagal memproses penerimaan: ' . $e->getMessage());
     }
 })->name('penerimaan.detail.store');
 
 Route::get('penerimaan/{id}/edit', function ($id) {
-    $penerimaan = DB::table('penerimaan')->where('idpenerimaan',$id)->first();
+    $penerimaan = DB::table('penerimaan')->where('idpenerimaan', $id)->first();
     if (!$penerimaan) {
         return redirect()->route('penerimaan.index')->with('error', 'Data tidak ditemukan.');
     }
@@ -314,14 +377,14 @@ Route::get('penerimaan/{id}/edit', function ($id) {
     return view('penerimaan.edit', compact('penerimaan', 'pengadaans', 'users'));
 })->name('penerimaan.edit');
 
-Route::put('penerimaan/{id}/update', function (Request $request,$id) {
+Route::put('penerimaan/{id}/update', function (Request $request, $id) {
     try {
         DB::table('penerimaan')
             ->where('idpenerimaan', $id)
             ->update([
                 'idpengadaan' => $request->idpengadaan,
                 'iduser'      => $request->iduser,
-                'status'      => $request->status ?? 'F'
+                'status'      => $request->status ?? 'B'
             ]);
 
         return redirect()->route('penerimaan.detail', $id)->with('success', 'Header penerimaan berhasil diperbarui!');
@@ -345,7 +408,7 @@ Route::delete('penerimaan/{id}/destroy', function ($id) {
 
 Route::delete('penerimaan/detail/{iddetail}/destroy', function ($iddetail) {
     try {
-        $detail = DB::table('detail_penerimaan')->where('iddetail_penerimaan',$iddetail)->first();
+        $detail = DB::table('detail_penerimaan')->where('iddetail_penerimaan', $iddetail)->first();
         if ($detail) {
             DB::table('detail_penerimaan')->where('iddetail_penerimaan', $iddetail)->delete();
             return back()->with('success', 'Item barang berhasil dihapus dari detail penerimaan.');
@@ -355,3 +418,144 @@ Route::delete('penerimaan/detail/{iddetail}/destroy', function ($iddetail) {
         return back()->with('error', 'Gagal menghapus item: ' . $e->getMessage());
     }
 })->name('penerimaan.detail.destroy');
+
+// ==========================================
+// 6. TRANSAKSI PENJUALAN (FUNCTION & TRIGGER)
+// ==========================================
+Route::get('penjualan', function () {
+    $penjualans = DB::table('penjualan')
+        ->leftJoin('user', 'penjualan.iduser', '=', 'user.iduser')
+        ->leftJoin('margin_penjualan', 'penjualan.idmargin_penjualan', '=', 'margin_penjualan.idmargin_penjualan')
+        ->select(
+            'penjualan.*',
+            'user.username',
+            'margin_penjualan.persen as margin_persen'
+        )
+        ->orderBy('penjualan.idpenjualan', 'desc')
+        ->get();
+
+    return view('penjualan.index', compact('penjualans'));
+})->name('penjualan.index');
+
+Route::get('penjualan/create', function () {
+    // Mengambil harga_satuan langsung dari Stored Function hitung_harga_jual(idbarang)
+    $barangs = DB::table('view_barang')
+        ->where('status', 1)
+        ->select(
+            'view_barang.*',
+            DB::raw('hitung_harga_jual(idbarang) as harga_jual')
+        )
+        ->get();
+
+    // Cek stok terakhir tiap barang dari kartu_stok
+    foreach ($barangs as $b) {
+        $lastStok = DB::table('kartu_stok')
+            ->where('idbarang', $b->idbarang)
+            ->orderBy('idkartu_stok', 'desc')
+            ->value('stock');
+        $b->stok_tersedia = $lastStok ?? 0;
+    }
+
+    $marginAktif = DB::table('view_margin_penjualan')->where('status', 1)->first();
+    $users       = DB::table('user')->get();
+
+    return view('penjualan.create', compact('barangs', 'marginAktif', 'users'));
+})->name('penjualan.create');
+
+Route::post('penjualan/store', function (Request $request) {
+    try {
+        DB::transaction(function () use ($request) {
+            $marginAktif = DB::table('view_margin_penjualan')->where('status', 1)->first();
+            if (!$marginAktif) {
+                throw new \Exception('Belum ada margin penjualan yang aktif! Aktifkan salah satu margin terlebih dahulu.');
+            }
+
+            $userId = $request->iduser;
+            if (!$userId) {
+                $firstUser = DB::table('user')->first();
+                $userId = $firstUser ? $firstUser->iduser : 1;
+            }
+
+            $idBarangs = is_array($request->idbarang) ? $request->idbarang : [$request->idbarang];
+            $jumlahs   = is_array($request->jumlah) ? $request->jumlah : [$request->jumlah];
+
+            $subtotalKeseluruhan = 0;
+            $itemsSiapSimpan     = [];
+
+            foreach ($idBarangs as $i => $idBarang) {
+                if (!$idBarang) continue;
+                $qty = (int) ($jumlahs[$i] ?? 1);
+
+                // Memanggil Stored Function harga_satuan & sub_total langsung dari MySQL
+                $calc = DB::selectOne(
+                    'SELECT hitung_harga_jual(?) AS harga_satuan, hitung_subtotal_penjualan(?, ?) AS sub_total',
+                    [$idBarang, $idBarang, $qty]
+                );
+
+                $hargaSatuan = (int) round($calc->harga_satuan);
+                $subTotal    = (int) round($calc->sub_total);
+
+                $subtotalKeseluruhan += $subTotal;
+                $itemsSiapSimpan[] = [
+                    'idbarang'     => $idBarang,
+                    'jumlah'       => $qty,
+                    'harga_satuan' => $hargaSatuan,
+                    'sub_total'    => $subTotal,
+                ];
+            }
+
+            $ppn   = (int) round($subtotalKeseluruhan * 0.11);
+            $total = $subtotalKeseluruhan + $ppn;
+
+            // Insert header penjualan (status hanya ada 1 yaitu 'S' = Selesai)
+            $idpenjualan = DB::table('penjualan')->insertGetId([
+                'created_at'         => now(),
+                'subtotal_nilai'     => $subtotalKeseluruhan,
+                'ppn'                => $ppn,
+                'total_nilai'        => $total,
+                'iduser'             => $userId,
+                'idmargin_penjualan' => $marginAktif->idmargin_penjualan,
+            ]);
+
+            // Insert detail_penjualan -> memicu Trigger cek stok (SQLSTATE 45000) & potong kartu_stok
+            foreach ($itemsSiapSimpan as $item) {
+                DB::table('detail_penjualan')->insert([
+                    'idpenjualan'  => $idpenjualan,
+                    'idbarang'     => $item['idbarang'],
+                    'harga_satuan' => $item['harga_satuan'],
+                    'jumlah'       => $item['jumlah'],
+                    'sub_total'    => $item['sub_total'],
+                ]);
+            }
+        });
+
+        return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan (Selesai) dan stok otomatis berkurang!');
+    } catch (\Exception $e) {
+        return back()->withInput()->with('error', 'Gagal memproses penjualan: ' . $e->getMessage());
+    }
+})->name('penjualan.store');
+
+Route::get('penjualan/{id}/detail', function ($id) {
+    $penjualan = DB::table('penjualan')
+        ->leftJoin('user', 'penjualan.iduser', '=', 'user.iduser')
+        ->leftJoin('margin_penjualan', 'penjualan.idmargin_penjualan', '=', 'margin_penjualan.idmargin_penjualan')
+        ->select(
+            'penjualan.*',
+            'user.username',
+            'margin_penjualan.persen as margin_persen'
+        )
+        ->where('penjualan.idpenjualan', $id)
+        ->first();
+
+    if (!$penjualan) {
+        return redirect()->route('penjualan.index')->with('error', 'Data penjualan tidak ditemukan.');
+    }
+
+    $details = DB::table('detail_penjualan')
+        ->join('barang', 'detail_penjualan.idbarang', '=', 'barang.idbarang')
+        ->select('detail_penjualan.*', 'barang.nama as nama_barang')
+        ->where('detail_penjualan.idpenjualan', $id)
+        ->get();
+
+    return view('penjualan.detail', compact('penjualan', 'details'));
+})->name('penjualan.detail');
