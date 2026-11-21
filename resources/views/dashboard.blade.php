@@ -13,10 +13,10 @@
 
     <style>
         :root {
-            --primary-blue: #0284c7;        /* Biru utama di navbar & tombol */
+            --primary-blue: #0284c7;
             --primary-blue-hover: #0369a1;
-            --blue-outline: #bae6fd;        /* Biru muda untuk border */
-            --bg-body: #f8fafc;             /* Latar abu-abu sangat muda */
+            --blue-outline: #bae6fd;
+            --bg-body: #f8fafc;
             --text-dark: #1e293b;
         }
 
@@ -29,7 +29,6 @@
             overflow-x: hidden;
         }
 
-        /* Top Navbar Biru Utama */
         .top-navbar {
             background-color: var(--primary-blue);
             height: 60px;
@@ -73,13 +72,13 @@
             cursor: pointer;
         }
 
-        /* Sidebar Kiri Putih */
         .sidebar {
             width: 230px;
             min-height: calc(100vh - 60px);
             background-color: #ffffff;
             border-right: 1px solid #f0f0f0;
             padding-top: 1.5rem;
+            flex-shrink: 0;
         }
 
         .sidebar .nav-item {
@@ -108,7 +107,6 @@
             font-weight: 800;
         }
 
-        /* Submenu Akordeon Master Data */
         .accordion-btn-custom {
             display: flex;
             align-items: center;
@@ -139,7 +137,6 @@
             color: var(--primary-blue);
         }
 
-        /* Kategori Transaksi */
         .menu-heading {
             padding: 1rem 1.5rem 0.25rem;
             font-size: 0.72rem;
@@ -148,13 +145,11 @@
             letter-spacing: 0.5px;
         }
 
-        /* Konten Utama */
         .main-wrapper {
             padding: 2rem;
             flex-grow: 1;
         }
 
-        /* Kartu Aksen Biru Tipis */
         .card-blue-outline {
             background-color: #ffffff;
             border: 1px solid var(--blue-outline);
@@ -189,7 +184,6 @@
             color: #64748b;
         }
 
-        /* Kartu Putih Biasa */
         .card-white-clean {
             background-color: #ffffff;
             border-radius: 12px;
@@ -207,7 +201,6 @@
             font-weight: 700;
         }
 
-        /* Tombol Outline Biru */
         .btn-blue-outline {
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
@@ -222,6 +215,23 @@
 
         .btn-blue-outline:hover {
             background-color: var(--primary-blue);
+            color: #ffffff;
+        }
+
+        .btn-blue-solid {
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            border: 1px solid var(--primary-blue);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-blue-solid:hover {
+            background-color: var(--primary-blue-hover);
             color: #ffffff;
         }
     </style>
@@ -283,6 +293,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="/penjualan" class="sidebar-link">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Penjualan</span>
+                    </a>
+                </li>
+                <li>
                     <a href="/kartu-stok" class="sidebar-link">
                         <i class="fa-solid fa-clipboard-list"></i>
                         <span>Kartu Stok</span>
@@ -302,9 +318,61 @@
                 <span class="badge bg-white text-secondary border px-3 py-2 fw-semibold">Database: projekpbd</span>
             </div>
 
-            <!-- ROW 1: 3 KARTU DENGAN AKSEN/BORDER BIRU -->
+            <!-- AKSES CEPAT ALUR TRANSAKSI -->
+            <div class="mb-4">
+                <h6 class="fw-bold text-uppercase text-secondary mb-3" style="font-size: 0.78rem; letter-spacing: 0.5px;">
+                    Alur Transaksi Utama
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">1. PENGADAAN (PO)</div>
+                                <p class="small text-muted mb-2">Pesan barang ke vendor</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/pengadaan" class="btn-blue-outline">Buka Pengadaan</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">2. PENERIMAAN</div>
+                                <p class="small text-muted mb-2">Terima barang & tambah stok</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/penerimaan" class="btn-blue-outline">Buka Penerimaan</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-blue-outline" style="border-color: var(--primary-blue);">
+                            <div>
+                                <div class="label-title">3. PENJUALAN (KASIR)</div>
+                                <p class="small text-muted mb-2">Pengurangan stok</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/penjualan" class="btn-blue-solid">Buka Penjualan</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">4. KARTU STOK</div>
+                                <p class="small text-muted mb-2">Log mutasi otomatis trigger</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/kartu-stok" class="btn-blue-outline">Lihat Mutasi</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW MASTER DATA 1 -->
             <div class="row g-4 mb-4">
-                <!-- Satuan -->
                 <div class="col-md-4">
                     <div class="card-blue-outline">
                         <div>
@@ -318,7 +386,6 @@
                     </div>
                 </div>
 
-                <!-- Barang -->
                 <div class="col-md-4">
                     <div class="card-blue-outline">
                         <div>
@@ -332,7 +399,6 @@
                     </div>
                 </div>
 
-                <!-- Margin Penjualan -->
                 <div class="col-md-4">
                     <div class="card-blue-outline">
                         <div>
@@ -347,9 +413,8 @@
                 </div>
             </div>
 
-            <!-- ROW 2: KARTU TAMBAHAN (VENDOR, ROLE, USER) -->
+            <!-- ROW MASTER DATA 2 -->
             <div class="row g-4">
-                <!-- Vendor -->
                 <div class="col-md-4">
                     <div class="card-white-clean">
                         <div>
@@ -362,7 +427,6 @@
                     </div>
                 </div>
 
-                <!-- Role -->
                 <div class="col-md-4">
                     <div class="card-white-clean">
                         <div>
@@ -375,7 +439,6 @@
                     </div>
                 </div>
 
-                <!-- User -->
                 <div class="col-md-4">
                     <div class="card-white-clean">
                         <div>
@@ -388,11 +451,9 @@
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

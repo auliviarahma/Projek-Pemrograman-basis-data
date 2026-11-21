@@ -72,6 +72,7 @@
             background-color: #ffffff;
             border-right: 1px solid #f0f0f0;
             padding-top: 1.5rem;
+            flex-shrink: 0;
         }
 
         .sidebar-link {
@@ -224,6 +225,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="/penjualan" class="sidebar-link">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Penjualan</span>
+                    </a>
+                </li>
+                <li>
                     <a href="/kartu-stok" class="sidebar-link">
                         <i class="fa-solid fa-clipboard-list"></i>
                         <span>Kartu Stok</span>
@@ -310,7 +317,7 @@
                                 <th>TANGGAL</th>
                                 <th>VENDOR</th>
                                 <th>PETUGAS</th>
-                                <th class="text-center" style="width: 100px;">STATUS</th>
+                                <th class="text-center" style="width: 120px;">STATUS</th>
                                 <th class="text-end">TOTAL</th>
                                 <th class="text-center" style="width: 220px;">AKSI</th>
                             </tr>
@@ -323,9 +330,17 @@
                                     <td class="fw-semibold">{{ $item->nama_vendor ?? '-' }}</td>
                                     <td><span class="badge bg-light text-dark border">{{ $item->username ?? 'admin' }}</span></td>
                                     <td class="text-center">
-                                        <span class="badge bg-light text-dark border">{{ $item->status ?? 'F' }}</span>
+                                        @if ($item->status == 'S')
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                Selesai
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                                Sebagian ({{ $item->status ?? 'B' }})
+                                            </span>
+                                        @endif
                                     </td>
-                                    <td class="text-end fw-bold">Rp{{ number_format($item->total_nilai ?? 0) }}</td>
+                                    <td class="text-end fw-bold">Rp{{ number_format($item->total_nilai ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-center">
                                         <div class="d-inline-flex gap-1">
                                             <a href="{{ route('penerimaan.detail', $item->idpenerimaan) }}" class="btn-action-view">

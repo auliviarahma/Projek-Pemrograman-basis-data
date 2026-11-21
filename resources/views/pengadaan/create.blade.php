@@ -3,203 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Pengadaan Baru - SIMBA</title>
-
+    <title>Tambah Pengadaan - SIMBA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-
     <style>
-        :root {
-            --primary-blue: #0284c7;
-            --primary-blue-hover: #0369a1;
-            --bg-body: #f8fafc;
-            --text-dark: #1e293b;
-        }
-
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-dark);
-            margin: 0;
-            padding: 0;
-        }
-
-        .top-navbar {
-            background-color: var(--primary-blue);
-            height: 60px;
-            padding: 0 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .brand-text {
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 1.25rem;
-            letter-spacing: -0.5px;
-            text-decoration: none;
-        }
-
-        .main-wrapper {
-            max-width: 800px;
-            margin: 2.5rem auto;
-            padding: 0 1.5rem;
-        }
-
-        .card-custom {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
-
-        .btn-blue {
-            background-color: var(--primary-blue);
-            color: #ffffff;
-            font-weight: 700;
-            border-radius: 6px;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-blue:hover {
-            background-color: var(--primary-blue-hover);
-            color: #ffffff;
-        }
-
-        .calc-box {
-            background-color: #f1f5f9;
-            border-radius: 8px;
-            padding: 1.25rem;
-            border: 1px solid #e2e8f0;
-        }
+        :root { --primary-blue: #0284c7; --primary-blue-hover: #0369a1; --bg-body: #f8fafc; --text-dark: #1e293b; }
+        body { font-family: 'Nunito', sans-serif; background-color: var(--bg-body); color: var(--text-dark); margin: 0; padding: 0; overflow-x: hidden; }
+        .top-navbar { background-color: var(--primary-blue); height: 60px; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .brand-text { color: #ffffff; font-weight: 800; font-size: 1.25rem; text-decoration: none; }
+        .sidebar { width: 230px; min-height: calc(100vh - 60px); background-color: #ffffff; border-right: 1px solid #f0f0f0; padding-top: 1.5rem; flex-shrink: 0; }
+        .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 10px 1.5rem; color: #555555; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .sidebar-link:hover, .sidebar-link.active { color: var(--primary-blue); }
+        .sidebar-link.active { font-weight: 800; }
+        .menu-heading { padding: 1rem 1.5rem 0.25rem; font-size: 0.72rem; font-weight: 800; color: #aaaaaa; letter-spacing: 0.5px; }
+        .main-wrapper { padding: 2rem; flex-grow: 1; }
+        .card-panel { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.5rem; }
     </style>
 </head>
 <body>
-
     <header class="top-navbar">
         <a href="/" class="brand-text">SIMBA</a>
-        <span class="text-white small fw-bold">Modul Pengadaan (PO)</span>
+        <div class="text-white d-flex align-items-center gap-3">
+            <i class="fa-regular fa-bell"></i>
+            <i class="fa-regular fa-user"></i>
+        </div>
     </header>
 
-    <main class="main-wrapper">
-        <div class="card-custom">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div class="d-flex">
+        <aside class="sidebar">
+            <ul class="list-unstyled p-0 m-0">
+                <li><a href="/" class="sidebar-link"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a></li>
+                <li class="menu-heading">TRANSAKSI</li>
+                <li><a href="/pengadaan" class="sidebar-link active"><i class="fa-solid fa-cart-shopping" style="color: var(--primary-blue);"></i><span>Pengadaan</span></a></li>
+                <li><a href="/penerimaan" class="sidebar-link"><i class="fa-solid fa-truck-ramp-box"></i><span>Penerimaan</span></a></li>
+                <li><a href="/penjualan" class="sidebar-link"><i class="fa-solid fa-cash-register"></i><span>Penjualan</span></a></li>
+                <li><a href="/kartu-stok" class="sidebar-link"><i class="fa-solid fa-clipboard-list"></i><span>Kartu Stok</span></a></li>
+                <li class="menu-heading">PENGATURAN</li>
+                <li><a href="{{ route('margin-penjualan.index') }}" class="sidebar-link"><i class="fa-solid fa-percent"></i><span>Margin Penjualan</span></a></li>
+            </ul>
+        </aside>
+
+        <main class="main-wrapper">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 class="fw-bold mb-1" style="color: #0f172a;">Buat Pengadaan (PO) Baru</h4>
-                    <p class="text-muted small mb-0">Input dokumen Purchase Order untuk pemesanan barang ke vendor</p>
+                    <h3 class="fw-bold mb-1">Buat Purchase Order (Multi-Barang)</h3>
+                    <p class="text-secondary small mb-0">Harga dasar otomatis mengacu pada Master Barang (<code>view_barang</code>)</p>
                 </div>
-                <a href="{{ route('pengadaan.index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="fa-solid fa-arrow-left me-1"></i> Kembali
-                </a>
+                <a href="{{ route('pengadaan.index') }}" class="btn btn-outline-secondary btn-sm">Kembali</a>
             </div>
 
             @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
+                <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
-            <form action="{{ route('pengadaan.store') }}" method="POST">
-                @csrf
-
-                <div class="row mb-3">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <label class="form-label fw-bold small text-muted">VENDOR / SUPLIER</label>
-                        <select name="idvendor" class="form-select" required>
-                            <option value="">-- Pilih Vendor --</option>
-                            @foreach ($vendors as $v)
-                                <option value="{{ $v->idvendor }}" {{ old('idvendor') == $v->idvendor ? 'selected' : '' }}>
-                                    {{ $v->nama_vendor }}
-                                </option>
-                            @endforeach
-                        </select>
+            <div class="card-panel">
+                <form action="{{ route('pengadaan.store') }}" method="POST">
+                    @csrf
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-secondary">Vendor Rekanan</label>
+                            <select name="idvendor" class="form-select" required>
+                                <option value="">-- Pilih Vendor --</option>
+                                @foreach ($vendors as $v)
+                                    <option value="{{ $v->idvendor }}">{{ $v->nama_vendor }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-secondary">Petugas Pembuat PO</label>
+                            <select name="iduser" class="form-select">
+                                <option value="">-- Otomatis / Pilih Petugas --</option>
+                                @foreach ($users as $u)
+                                    <option value="{{ $u->iduser }}">{{ $u->username }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted">DIBUAT OLEH (USER)</label>
-                        <select name="iduser" class="form-select" required>
-                            <option value="">-- Pilih Petugas / User --</option>
-                            @foreach ($users as $u)
-                                <option value="{{ $u->iduser }}" {{ old('iduser') == $u->iduser ? 'selected' : '' }}>
-                                    {{ $u->username }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0">Daftar Barang Dipesan</h6>
+                        <button type="button" id="btn-tambah-po" class="btn btn-primary btn-sm fw-bold">
+                            <i class="fa-solid fa-plus me-1"></i> Tambah Barang
+                        </button>
                     </div>
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">BARANG YANG DIPESAN</label>
-                    <select name="idbarang" class="form-select" required>
-                        <option value="">-- Pilih Barang --</option>
-                        @foreach ($barangs as $b)
-                            <option value="{{ $b->idbarang }}" {{ old('idbarang') == $b->idbarang ? 'selected' : '' }}>
-                                {{ $b->nama }} (ID: {{ $b->idbarang }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 38%">Barang</th>
+                                    <th style="width: 22%">Harga Master</th>
+                                    <th style="width: 15%">Jumlah</th>
+                                    <th style="width: 20%">Sub Total</th>
+                                    <th style="width: 5%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="body-po">
+                                <tr class="baris-po">
+                                    <td>
+                                        <select name="idbarang[]" class="form-select select-barang-po" required>
+                                            <option value="" data-harga="0">-- Pilih Barang --</option>
+                                            @foreach ($barangs as $b)
+                                                <option value="{{ $b->idbarang }}" data-harga="{{ $b->harga }}">
+                                                    {{ $b->nama_barang }} ({{ $b->nama_satuan ?? 'Unit' }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control input-harga-po bg-light" value="Rp 0" readonly></td>
+                                    <td><input type="number" name="jumlah[]" class="form-control input-qty-po" min="1" value="1" required></td>
+                                    <td><input type="text" class="form-control input-sub-po bg-light fw-semibold" value="Rp 0" readonly></td>
+                                    <td class="text-center"><button type="button" class="btn btn-danger btn-sm btn-hapus-po" disabled>&times;</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <label class="form-label fw-bold small text-muted">JUMLAH PESANAN</label>
-                        <input type="number" name="jumlah" id="jumlah" class="form-control" placeholder="Contoh: 50" min="1" value="{{ old('jumlah') }}" required>
+                    <div class="row justify-content-end mt-3">
+                        <div class="col-md-4">
+                            <table class="table table-sm table-borderless">
+                                <tr><th>Subtotal:</th><td class="text-end" id="po-subtotal">Rp 0</td></tr>
+                                <tr><th>PPN (11%):</th><td class="text-end" id="po-ppn">Rp 0</td></tr>
+                                <tr class="border-top fs-5 fw-bold"><th>Total PO:</th><td class="text-end text-primary" id="po-total">Rp 0</td></tr>
+                            </table>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted">HARGA SATUAN (RP)</label>
-                        <input type="number" name="harga_satuan" id="harga_satuan" class="form-control" placeholder="Contoh: 25000" min="0" value="{{ old('harga_satuan') }}" required>
-                    </div>
-                </div>
 
-                <div class="calc-box mb-4">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Subtotal Nilai:</span>
-                        <span class="fw-semibold" id="txtSubtotal">Rp0</span>
+                    <div class="text-end mt-3 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: var(--primary-blue); border: none;">
+                            Simpan Pengadaan
+                        </button>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">PPN (11%):</span>
-                        <span class="fw-semibold" id="txtPPN">Rp0</span>
-                    </div>
-                    <div class="d-flex justify-content-between border-top pt-2">
-                        <span class="fw-bold">Total Nilai Pengadaan:</span>
-                        <span class="fw-bold text-primary fs-5" id="txtTotal">Rp0</span>
-                    </div>
-                </div>
+                </form>
+            </div>
+        </main>
+    </div>
 
-                <button type="submit" class="btn btn-blue w-100 py-2">
-                    <i class="fa-solid fa-cart-plus me-1"></i> Simpan & Terbitkan PO Pengadaan
-                </button>
-            </form>
-        </div>
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const inputJumlah = document.getElementById('jumlah');
-        const inputHarga = document.getElementById('harga_satuan');
-        const txtSubtotal = document.getElementById('txtSubtotal');
-        const txtPPN = document.getElementById('txtPPN');
-        const txtTotal = document.getElementById('txtTotal');
+    document.addEventListener('DOMContentLoaded', function () {
+        const bodyPO    = document.getElementById('body-po');
+        const btnTambah = document.getElementById('btn-tambah-po');
+        const formatRp  = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 
-        function hitungTotal() {
-            const jml = parseFloat(inputJumlah.value) || 0;
-            const hrg = parseFloat(inputHarga.value) || 0;
-            const subtotal = jml * hrg;
-            const ppn = Math.round(subtotal * 0.11);
-            const total = subtotal + ppn;
+        function hitungPO() {
+            let subAll = 0;
+            document.querySelectorAll('.baris-po').forEach(row => {
+                const sel   = row.querySelector('.select-barang-po');
+                const harga = Number(sel.options[sel.selectedIndex]?.dataset.harga || 0);
+                const qty   = Number(row.querySelector('.input-qty-po').value || 0);
+                const sub   = harga * qty;
+                row.querySelector('.input-harga-po').value = formatRp(harga);
+                row.querySelector('.input-sub-po').value   = formatRp(sub);
+                subAll += sub;
+            });
+            const ppn = Math.round(subAll * 0.11);
+            document.getElementById('po-subtotal').innerText = formatRp(subAll);
+            document.getElementById('po-ppn').innerText      = formatRp(ppn);
+            document.getElementById('po-total').innerText    = formatRp(subAll + ppn);
 
-            txtSubtotal.innerText = 'Rp' + subtotal.toLocaleString('id-ID');
-            txtPPN.innerText = 'Rp' + ppn.toLocaleString('id-ID');
-            txtTotal.innerText = 'Rp' + total.toLocaleString('id-ID');
+            const btns = document.querySelectorAll('.btn-hapus-po');
+            btns.forEach(b => b.disabled = (btns.length === 1));
         }
 
-        inputJumlah.addEventListener('input', hitungTotal);
-        inputHarga.addEventListener('input', hitungTotal);
+        btnTambah.addEventListener('click', () => {
+            const clone = bodyPO.querySelector('.baris-po').cloneNode(true);
+            clone.querySelector('.select-barang-po').selectedIndex = 0;
+            clone.querySelector('.input-harga-po').value = 'Rp 0';
+            clone.querySelector('.input-qty-po').value   = 1;
+            clone.querySelector('.input-sub-po').value   = 'Rp 0';
+            bodyPO.appendChild(clone);
+            hitungPO();
+        });
+
+        bodyPO.addEventListener('change', e => { if (e.target.classList.contains('select-barang-po')) hitungPO(); });
+        bodyPO.addEventListener('input', e => { if (e.target.classList.contains('input-qty-po')) hitungPO(); });
+        bodyPO.addEventListener('click', e => {
+            if (e.target.classList.contains('btn-hapus-po')) {
+                e.target.closest('.baris-po').remove();
+                hitungPO();
+            }
+        });
+    });
     </script>
 </body>
 </html>

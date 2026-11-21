@@ -462,6 +462,7 @@ Route::get('penjualan/create', function () {
     return view('penjualan.create', compact('barangs', 'marginAktif', 'users'));
 })->name('penjualan.create');
 
+
 Route::post('penjualan/store', function (Request $request) {
     try {
         DB::transaction(function () use ($request) {
@@ -520,11 +521,11 @@ Route::post('penjualan/store', function (Request $request) {
             // Insert detail_penjualan -> memicu Trigger cek stok (SQLSTATE 45000) & potong kartu_stok
             foreach ($itemsSiapSimpan as $item) {
                 DB::table('detail_penjualan')->insert([
-                    'idpenjualan'  => $idpenjualan,
-                    'idbarang'     => $item['idbarang'],
-                    'harga_satuan' => $item['harga_satuan'],
-                    'jumlah'       => $item['jumlah'],
-                    'sub_total'    => $item['sub_total'],
+                    'penjualan_idpenjualan' => $idpenjualan,
+                    'idbarang'              => $item['idbarang'],
+                    'harga_satuan'          => $item['harga_satuan'],
+                    'jumlah'                => $item['jumlah'],
+                    'sub_total'             => $item['sub_total'],
                 ]);
             }
         });
@@ -554,7 +555,7 @@ Route::get('penjualan/{id}/detail', function ($id) {
     $details = DB::table('detail_penjualan')
         ->join('barang', 'detail_penjualan.idbarang', '=', 'barang.idbarang')
         ->select('detail_penjualan.*', 'barang.nama as nama_barang')
-        ->where('detail_penjualan.idpenjualan', $id)
+        ->where('detail_penjualan.penjualan_idpenjualan', $id)
         ->get();
 
     return view('penjualan.detail', compact('penjualan', 'details'));

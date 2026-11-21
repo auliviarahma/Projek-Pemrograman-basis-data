@@ -24,6 +24,7 @@
             color: var(--text-dark);
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
         .top-navbar {
@@ -48,6 +49,7 @@
             background-color: #ffffff;
             border-right: 1px solid #f0f0f0;
             padding-top: 1.5rem;
+            flex-shrink: 0;
         }
 
         .sidebar-link {
@@ -197,6 +199,24 @@
 
                 <!-- TRANSAKSI -->
                 <li class="menu-heading">TRANSAKSI</li>
+                <li>
+                    <a href="/pengadaan" class="sidebar-link">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>Pengadaan</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/penerimaan" class="sidebar-link">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Penerimaan</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/penjualan" class="sidebar-link">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Penjualan</span>
+                    </a>
+                </li>
                 <li>
                     <a href="/kartu-stok" class="sidebar-link active">
                         <i class="fa-solid fa-clipboard-list" style="color: var(--primary-blue);"></i>
