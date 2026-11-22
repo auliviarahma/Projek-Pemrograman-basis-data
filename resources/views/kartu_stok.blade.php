@@ -151,12 +151,6 @@
             color: #b91c1c;
             font-weight: 700;
         }
-
-        .badge-retur {
-            background-color: #fef3c7;
-            color: #b45309;
-            font-weight: 700;
-        }
     </style>
 </head>
 <body>
@@ -231,7 +225,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <div>
                     <h3 class="fw-bold mb-1" style="color: #0f172a;">Buku Besar Kartu Stok</h3>
-                    <p class="text-secondary small mb-0">Catatan otomatisasi mutasi stok yang dieksekusi langsung oleh Trigger MySQL</p>
+                    <p class="text-secondary small mb-0">Catatan otomatisasi mutasi stok dari SQL View (<code>view_kartu_stok</code>) &amp; Trigger MySQL</p>
                 </div>
                 <a href="/" class="btn btn-sm btn-outline-secondary">
                     <i class="fa-solid fa-arrow-left me-1"></i> Kembali ke Dashboard
@@ -265,8 +259,6 @@
                                             <span class="badge badge-masuk px-2 py-1">M - Penerimaan</span>
                                         @elseif ($row->jenis_transaksi == 'K')
                                             <span class="badge badge-keluar px-2 py-1">K - Penjualan</span>
-                                        @elseif ($row->jenis_transaksi == 'R')
-                                            <span class="badge badge-retur px-2 py-1">R - Retur</span>
                                         @else
                                             <span class="badge bg-secondary px-2 py-1">{{ $row->jenis_transaksi }}</span>
                                         @endif

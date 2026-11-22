@@ -56,22 +56,11 @@ Route::redirect('/margin', '/margin-penjualan');
 Route::redirect('/margin_penjualan', '/margin-penjualan');
 
 // ==========================================
-// 3. BUKU BESAR KARTU STOK (MEMBACA TRIGGER)
+// 3. BUKU BESAR KARTU STOK (MEMBACA VIEW & TRIGGER)
 // ==========================================
 Route::get('kartu-stok', function () {
-    $kartuStok = DB::table('kartu_stok')
-        ->join('barang', 'kartu_stok.idbarang', '=', 'barang.idbarang')
-        ->select(
-            'kartu_stok.idkartu_stok',
-            'kartu_stok.created_at',
-            'barang.nama as nama_barang',
-            'kartu_stok.jenis_transaksi',
-            'kartu_stok.masuk',
-            'kartu_stok.keluar',
-            'kartu_stok.stock',
-            'kartu_stok.idtransaksi'
-        )
-        ->orderBy('kartu_stok.idkartu_stok', 'desc')
+    $kartuStok = DB::table('view_kartu_stok')
+        ->orderBy('idkartu_stok', 'desc')
         ->get();
 
     return view('kartu_stok', compact('kartuStok'));
@@ -345,7 +334,7 @@ Route::post('penerimaan/{id}/detail/store', function (Request $request, $id) {
 
         $subtotal = $jumlahTerima * $hargaTerima;
 
-        // Trigger otomatis: tambah kartu_stok, update harga master barang jika berubah, dan update status pengadaan & penerimaan
+        // Trigger otomatis: tambah kartu_stok (membaca dari view_kartu_stok), update harga master barang jika berubah, dan update status PO
         DB::table('detail_penerimaan')->insert([
             'idpenerimaan'        => $id,
             'barang_idbarang'     => $idbarang,
@@ -420,7 +409,7 @@ Route::delete('penerimaan/detail/{iddetail}/destroy', function ($iddetail) {
 })->name('penerimaan.detail.destroy');
 
 // ==========================================
-// 6. TRANSAKSI PENJUALAN (FUNCTION & TRIGGER)
+// 6. TRANSAKSI PENJUALAN (FUNCTION, VIEW & TRIGGER)
 // ==========================================
 Route::get('penjualan', function () {
     $penjualans = DB::table('penjualan')
@@ -447,9 +436,9 @@ Route::get('penjualan/create', function () {
         )
         ->get();
 
-    // Cek stok terakhir tiap barang dari kartu_stok
+    // Cek stok terakhir tiap barang melalui SQL View view_kartu_stok
     foreach ($barangs as $b) {
-        $lastStok = DB::table('kartu_stok')
+        $lastStok = DB::table('view_kartu_stok')
             ->where('idbarang', $b->idbarang)
             ->orderBy('idkartu_stok', 'desc')
             ->value('stock');
@@ -461,7 +450,6 @@ Route::get('penjualan/create', function () {
 
     return view('penjualan.create', compact('barangs', 'marginAktif', 'users'));
 })->name('penjualan.create');
-
 
 Route::post('penjualan/store', function (Request $request) {
     try {
@@ -518,7 +506,7 @@ Route::post('penjualan/store', function (Request $request) {
                 'idmargin_penjualan' => $marginAktif->idmargin_penjualan,
             ]);
 
-            // Insert detail_penjualan -> memicu Trigger cek stok (SQLSTATE 45000) & potong kartu_stok
+            // Insert detail_penjualan -> memicu Trigger cek stok via view_kartu_stok (SQLSTATE 45000) & potong stok
             foreach ($itemsSiapSimpan as $item) {
                 DB::table('detail_penjualan')->insert([
                     'penjualan_idpenjualan' => $idpenjualan,
