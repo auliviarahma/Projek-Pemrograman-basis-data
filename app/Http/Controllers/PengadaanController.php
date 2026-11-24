@@ -14,7 +14,7 @@ class PengadaanController extends Controller
             ->orderBy('idpengadaan', 'desc')
             ->get();
 
-        // Kelompokkan berdasarkan idpengadaan karena 1 pengadaan bisa memuat banyak barang
+        //  1 pengadaan bisa memuat banyak barang
         $pengadaan = $rows->groupBy('idpengadaan')->map(function ($items) {
             $first = $items->first();
             $first->jumlah_item   = $items->count();

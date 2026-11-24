@@ -8,7 +8,7 @@ public function storeDetail(Request $request)
     ]);
 
     try {
-        // Trigger trg_penerimaan_tambah_stok otomatis mencatat jenis 'M' di kartu_stok
+        // trg_penerimaan_tambah_stok otomatis mencatat di kartu_stok
         DB::table('detail_penerimaan')->insert([
             'idpenerimaan'    => $request->idpenerimaan,
             'barang_idbarang' => $request->barang_idbarang,

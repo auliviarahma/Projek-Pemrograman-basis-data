@@ -46,30 +46,12 @@
             text-decoration: none;
         }
 
-        .search-box {
-            position: relative;
-            width: 320px;
-        }
-
-        .search-box input {
-            border-radius: 6px;
-            border: none;
-            padding: 6px 14px;
-            font-size: 0.85rem;
-            width: 100%;
-            outline: none;
-        }
-
         .nav-icons {
             display: flex;
             align-items: center;
             gap: 18px;
             color: #ffffff;
             font-size: 1.1rem;
-        }
-
-        .nav-icons i {
-            cursor: pointer;
         }
 
         .sidebar {
@@ -238,16 +220,27 @@
 </head>
 <body>
 
+    @php
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $currentRole = $currentUser ? \Illuminate\Support\Facades\DB::table('role')->where('idrole', $currentUser->idrole)->value('nama_role') : '';
+        $isSuperAdmin = strtolower(trim($currentRole ?? '')) === 'super admin';
+    @endphp
+
     <!-- TOP NAVBAR BIRU -->
     <header class="top-navbar">
         <a href="/" class="brand-text">SIMBA</a>
-        <div class="search-box d-none d-md-block">
-            <input type="text" placeholder="Cari Master Data / Barang...">
-        </div>
         <div class="nav-icons">
+            @if ($currentUser)
+                <span class="small fw-bold" style="font-size: 0.85rem;">{{ $currentUser->username }} ({{ $currentRole }})</span>
+            @endif
             <i class="fa-regular fa-bell"></i>
             <i class="fa-regular fa-user"></i>
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <form action="{{ route('logout') }}" method="POST" class="m-0 d-inline">
+                @csrf
+                <button type="submit" title="Logout" style="background: transparent; border: none; color: #ffffff; padding: 0; font-size: 1.1rem; cursor: pointer;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </form>
         </div>
     </header>
 
@@ -262,36 +255,42 @@
                     </a>
                 </li>
 
-                <!-- DROPDOWN MASTER DATA -->
-                <li>
-                    <button class="accordion-btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#anakMasterData" aria-expanded="true">
-                        <span><i class="fa-regular fa-folder me-2"></i> Master Data</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </button>
-                    <div class="collapse show" id="anakMasterData">
-                        <a href="/satuan" class="sub-link">Master Satuan</a>
-                        <a href="/barang" class="sub-link">Master Barang</a>
-                        <a href="/vendor" class="sub-link">Master Vendor</a>
-                        <a href="/role" class="sub-link">Master Role</a>
-                        <a href="/user" class="sub-link">Master User</a>
-                        <a href="/margin" class="sub-link">Margin Penjualan</a>
-                    </div>
-                </li>
+                @if ($isSuperAdmin)
+                    <!-- DROPDOWN MASTER DATA -->
+                    <li>
+                        <button class="accordion-btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#anakMasterData" aria-expanded="true">
+                            <span><i class="fa-regular fa-folder me-2"></i> Master Data</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <div class="collapse show" id="anakMasterData">
+                            <a href="/satuan" class="sub-link">Master Satuan</a>
+                            <a href="/barang" class="sub-link">Master Barang</a>
+                            <a href="/vendor" class="sub-link">Master Vendor</a>
+                            <a href="/role" class="sub-link">Master Role</a>
+                            <a href="/user" class="sub-link">Master User</a>
+                            <a href="/margin-penjualan" class="sub-link">Margin Penjualan</a>
+                        </div>
+                    </li>
+                @endif
 
                 <!-- MENU TRANSAKSI -->
                 <li class="menu-heading">TRANSAKSI</li>
-                <li>
-                    <a href="/pengadaan" class="sidebar-link">
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span>Pengadaan</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/penerimaan" class="sidebar-link">
-                        <i class="fa-solid fa-truck-ramp-box"></i>
-                        <span>Penerimaan</span>
-                    </a>
-                </li>
+
+                @if ($isSuperAdmin)
+                    <li>
+                        <a href="/pengadaan" class="sidebar-link">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                            <span>Pengadaan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/penerimaan" class="sidebar-link">
+                            <i class="fa-solid fa-truck-ramp-box"></i>
+                            <span>Penerimaan</span>
+                        </a>
+                    </li>
+                @endif
+
                 <li>
                     <a href="/penjualan" class="sidebar-link">
                         <i class="fa-solid fa-cash-register"></i>
@@ -309,6 +308,20 @@
 
         <!-- KONTEN UTAMA KANAN -->
         <main class="main-wrapper">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
             <!-- Header Judul & Badge Database -->
             <div class="d-flex justify-content-between align-items-start mb-4 pb-2 border-bottom">
                 <div>
@@ -324,32 +337,35 @@
                     Alur Transaksi Utama
                 </h6>
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="card-blue-outline">
-                            <div>
-                                <div class="label-title">1. PENGADAAN (PO)</div>
-                                <p class="small text-muted mb-2">Pesan barang ke vendor</p>
-                            </div>
-                            <div class="text-end">
-                                <a href="/pengadaan" class="btn-blue-outline">Buka Pengadaan</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card-blue-outline">
-                            <div>
-                                <div class="label-title">2. PENERIMAAN</div>
-                                <p class="small text-muted mb-2">Terima barang & tambah stok</p>
-                            </div>
-                            <div class="text-end">
-                                <a href="/penerimaan" class="btn-blue-outline">Buka Penerimaan</a>
+                    @if ($isSuperAdmin)
+                        <div class="col-md-3">
+                            <div class="card-blue-outline">
+                                <div>
+                                    <div class="label-title">1. PENGADAAN (PO)</div>
+                                    <p class="small text-muted mb-2">Pesan barang ke vendor</p>
+                                </div>
+                                <div class="text-end">
+                                    <a href="/pengadaan" class="btn-blue-outline">Buka Pengadaan</a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
+                        <div class="col-md-3">
+                            <div class="card-blue-outline">
+                                <div>
+                                    <div class="label-title">2. PENERIMAAN</div>
+                                    <p class="small text-muted mb-2">Terima barang &amp; tambah stok</p>
+                                </div>
+                                <div class="text-end">
+                                    <a href="/penerimaan" class="btn-blue-outline">Buka Penerimaan</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="{{ $isSuperAdmin ? 'col-md-3' : 'col-md-6' }}">
                         <div class="card-blue-outline" style="border-color: var(--primary-blue);">
                             <div>
-                                <div class="label-title">3. PENJUALAN (KASIR)</div>
+                                <div class="label-title">{{ $isSuperAdmin ? '3. PENJUALAN (KASIR)' : '1. PENJUALAN (KASIR)' }}</div>
                                 <p class="small text-muted mb-2">Pengurangan stok</p>
                             </div>
                             <div class="text-end">
@@ -357,10 +373,10 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="{{ $isSuperAdmin ? 'col-md-3' : 'col-md-6' }}">
                         <div class="card-blue-outline">
                             <div>
-                                <div class="label-title">4. KARTU STOK</div>
+                                <div class="label-title">{{ $isSuperAdmin ? '4. KARTU STOK' : '2. KARTU STOK' }}</div>
                                 <p class="small text-muted mb-2">Log mutasi otomatis trigger</p>
                             </div>
                             <div class="text-end">
@@ -371,86 +387,88 @@
                 </div>
             </div>
 
-            <!-- ROW MASTER DATA 1 -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="card-blue-outline">
-                        <div>
-                            <div class="label-title">MASTER SATUAN</div>
-                            <div class="metric-value">{{ $totalSatuan ?? 5 }} Data</div>
+            @if ($isSuperAdmin)
+                <!-- ROW MASTER DATA 1 -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">MASTER SATUAN</div>
+                                <div class="metric-value">{{ $totalSatuan ?? 5 }} Data</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2">
+                                <span class="footer-desc">Unit logistik aktif</span>
+                                <a href="/satuan" class="btn-blue-outline">Buka</a>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center pt-2">
-                            <span class="footer-desc">Unit logistik aktif</span>
-                            <a href="/satuan" class="btn-blue-outline">Buka</a>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">MASTER BARANG</div>
+                                <div class="metric-value">{{ $totalBarang ?? 5 }} Produk</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2">
+                                <span class="footer-desc">Katalog bahan baku &amp; jadi</span>
+                                <a href="/barang" class="btn-blue-outline">Buka</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card-blue-outline">
+                            <div>
+                                <div class="label-title">MARGIN PENJUALAN</div>
+                                <div class="metric-value">{{ $totalMargin ?? 5 }} Aturan</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2">
+                                <span class="footer-desc">Persentase laba aktif</span>
+                                <a href="/margin-penjualan" class="btn-blue-outline">Buka</a>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="card-blue-outline">
-                        <div>
-                            <div class="label-title">MASTER BARANG</div>
-                            <div class="metric-value">{{ $totalBarang ?? 5 }} Produk</div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center pt-2">
-                            <span class="footer-desc">Katalog bahan baku & jadi</span>
-                            <a href="/barang" class="btn-blue-outline">Buka</a>
+                <!-- ROW MASTER DATA 2 -->
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card-white-clean">
+                            <div>
+                                <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER VENDOR</h6>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalVendor ?? 5 }}</h3>
+                            </div>
+                            <div class="pt-3 border-top mt-3 text-end">
+                                <a href="/vendor" class="btn-blue-outline">Kelola Vendor</a>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="card-blue-outline">
-                        <div>
-                            <div class="label-title">MARGIN PENJUALAN</div>
-                            <div class="metric-value">{{ $totalMargin ?? 5 }} Aturan</div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center pt-2">
-                            <span class="footer-desc">Persentase laba aktif</span>
-                            <a href="/margin" class="btn-blue-outline">Buka</a>
+                    <div class="col-md-4">
+                        <div class="card-white-clean">
+                            <div>
+                                <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER ROLE</h6>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalRole ?? 11 }}</h3>
+                            </div>
+                            <div class="pt-3 border-top mt-3 text-end">
+                                <a href="/role" class="btn-blue-outline">Kelola Role</a>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- ROW MASTER DATA 2 -->
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card-white-clean">
-                        <div>
-                            <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER VENDOR</h6>
-                            <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalVendor ?? 5 }}</h3>
-                        </div>
-                        <div class="pt-3 border-top mt-3 text-end">
-                            <a href="/vendor" class="btn-blue-outline">Kelola Vendor</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card-white-clean">
-                        <div>
-                            <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER ROLE</h6>
-                            <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalRole ?? 11 }}</h3>
-                        </div>
-                        <div class="pt-3 border-top mt-3 text-end">
-                            <a href="/role" class="btn-blue-outline">Kelola Role</a>
+                    <div class="col-md-4">
+                        <div class="card-white-clean">
+                            <div>
+                                <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER USER</h6>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalUser ?? 7 }}</h3>
+                            </div>
+                            <div class="pt-3 border-top mt-3 text-end">
+                                <a href="/user" class="btn-blue-outline">Kelola User</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="card-white-clean">
-                        <div>
-                            <h6 class="mb-1 text-muted" style="font-size: 0.8rem; letter-spacing: 0.3px; font-weight: 700;">MASTER USER</h6>
-                            <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.85rem;">{{ $totalUser ?? 7 }}</h3>
-                        </div>
-                        <div class="pt-3 border-top mt-3 text-end">
-                            <a href="/user" class="btn-blue-outline">Kelola User</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @endif
         </main>
     </div>
 

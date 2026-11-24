@@ -255,6 +255,16 @@
                 </div>
             @endif
 
+            @if ($errors->any())
+                <div class="alert alert-danger rounded-3">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @if (!$marginAktif)
                 <div class="alert alert-warning rounded-3">
                     <strong>Perhatian!</strong> Belum ada Margin Penjualan yang aktif. Silakan aktifkan salah satu margin di menu <strong>Margin Penjualan</strong> terlebih dahulu sebelum melakukan transaksi.
@@ -306,10 +316,15 @@
                                         <select name="idbarang[]" class="form-select select-barang-jual" required>
                                             <option value="" data-harga="0" data-stok="0">-- Pilih Barang --</option>
                                             @foreach ($barangs as $b)
+                                                @php
+                                                    $namaBrg = $b->nama_barang ?? ($b->nama ?? 'Barang #' . $b->idbarang);
+                                                    $stokBrg = $b->stok_tersedia ?? ($b->stok ?? 0);
+                                                @endphp
                                                 <option value="{{ $b->idbarang }}" 
                                                         data-harga="{{ round($b->harga_jual) }}" 
-                                                        data-stok="{{ $b->stok_tersedia }}">
-                                                    {{ $b->nama_barang }} (Stok: {{ $b->stok_tersedia }})
+                                                        data-stok="{{ $stokBrg }}"
+                                                        {{ $stokBrg <= 0 ? 'disabled' : '' }}>
+                                                    {{ $namaBrg }} (Stok: {{ $stokBrg }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -374,11 +389,24 @@
             let subtotalSemua = 0;
 
             document.querySelectorAll('.baris-jual').forEach(row => {
-                const select = row.querySelector('.select-barang-jual');
-                const opt    = select.options[select.selectedIndex];
-                const harga  = Number(opt?.dataset.harga || 0);
-                const qty    = Number(row.querySelector('.input-qty-jual').value || 0);
-                const sub    = harga * qty;
+                const select   = row.querySelector('.select-barang-jual');
+                const inputQty = row.querySelector('.input-qty-jual');
+                const opt      = select.options[select.selectedIndex];
+
+                const harga = Number(opt?.dataset.harga || 0);
+                const stok  = Number(opt?.dataset.stok || 0);
+
+                if (select.value !== "") {
+                    inputQty.max = stok;
+                    if (Number(inputQty.value) > stok && stok > 0) {
+                        inputQty.value = stok;
+                    }
+                } else {
+                    inputQty.removeAttribute('max');
+                }
+
+                const qty = Number(inputQty.value || 0);
+                const sub = harga * qty;
 
                 row.querySelector('.input-harga-jual').value = formatRp(harga);
                 row.querySelector('.input-sub-jual').value   = formatRp(sub);
@@ -403,6 +431,7 @@
             barisBaru.querySelector('.select-barang-jual').selectedIndex = 0;
             barisBaru.querySelector('.input-harga-jual').value           = 'Rp 0';
             barisBaru.querySelector('.input-qty-jual').value             = 1;
+            barisBaru.querySelector('.input-qty-jual').removeAttribute('max');
             barisBaru.querySelector('.input-sub-jual').value             = 'Rp 0';
 
             bodyJual.appendChild(barisBaru);

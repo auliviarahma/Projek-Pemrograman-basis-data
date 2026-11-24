@@ -47,7 +47,7 @@ class MarginPenjualanController extends Controller
             'created_at' => now(),
         ]);
 
-        // Jika user memilih status Aktif (1), langsung panggil SP agar margin lain otomatis mati
+        // otomatis mati dan nyala
         if ((int) $request->status === 1) {
             DB::statement("CALL sp_set_margin_aktif(?)", [$marginBaru->idmargin_penjualan]);
         }

@@ -144,18 +144,33 @@
 </head>
 <body>
 
+    @php
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $currentRole = $currentUser ? \Illuminate\Support\Facades\DB::table('role')->where('idrole', $currentUser->idrole)->value('nama_role') : 'Guest';
+        $isSuperAdmin = strtolower(trim($currentRole ?? '')) === 'super admin';
+        $isMaster = request()->is('satuan*', 'barang*', 'vendor*', 'role*', 'user*', 'margin-penjualan*');
+    @endphp
+
     <header class="top-navbar">
         <a href="/" class="brand-text">SIMBA</a>
         <div class="text-white d-flex align-items-center gap-3">
-            <i class="fa-regular fa-bell"></i>
-            <i class="fa-regular fa-user"></i>
+            @if ($currentUser)
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-regular fa-user"></i>
+                    <span class="small fw-bold">{{ $currentUser->username }}</span>
+                    <span class="badge bg-light text-primary fw-bold">{{ $currentRole }}</span>
+                </div>
+                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-light fw-bold">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                    </button>
+                </form>
+            @endif
         </div>
     </header>
 
     <div class="d-flex">
-        @php
-            $isMaster = request()->is('satuan*', 'barang*', 'vendor*', 'role*', 'user*', 'margin-penjualan*');
-        @endphp
         <aside class="sidebar">
             <ul class="list-unstyled p-0 m-0">
                 <li>
@@ -165,34 +180,40 @@
                     </a>
                 </li>
 
-                <li>
-                    <button class="accordion-btn-custom {{ $isMaster ? 'active-parent' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#anakMasterData" aria-expanded="{{ $isMaster ? 'true' : 'false' }}">
-                        <span><i class="fa-regular fa-folder me-2"></i> Master Data</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
-                    </button>
-                    <div class="collapse {{ $isMaster ? 'show' : '' }}" id="anakMasterData">
-                        <a href="/satuan" class="sub-link {{ request()->is('satuan*') ? 'active' : '' }}">Master Satuan</a>
-                        <a href="/barang" class="sub-link {{ request()->is('barang*') ? 'active' : '' }}">Master Barang</a>
-                        <a href="/vendor" class="sub-link {{ request()->is('vendor*') ? 'active' : '' }}">Master Vendor</a>
-                        <a href="/role" class="sub-link {{ request()->is('role*') ? 'active' : '' }}">Master Role</a>
-                        <a href="/user" class="sub-link {{ request()->is('user*') ? 'active' : '' }}">Master User</a>
-                        <a href="/margin-penjualan" class="sub-link {{ request()->is('margin-penjualan*') ? 'active' : '' }}">Margin Penjualan</a>
-                    </div>
-                </li>
+                @if ($isSuperAdmin)
+                    <li>
+                        <button class="accordion-btn-custom {{ $isMaster ? 'active-parent' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#anakMasterData" aria-expanded="{{ $isMaster ? 'true' : 'false' }}">
+                            <span><i class="fa-regular fa-folder me-2"></i> Master Data</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <div class="collapse {{ $isMaster ? 'show' : '' }}" id="anakMasterData">
+                            <a href="/satuan" class="sub-link {{ request()->is('satuan*') ? 'active' : '' }}">Master Satuan</a>
+                            <a href="/barang" class="sub-link {{ request()->is('barang*') ? 'active' : '' }}">Master Barang</a>
+                            <a href="/vendor" class="sub-link {{ request()->is('vendor*') ? 'active' : '' }}">Master Vendor</a>
+                            <a href="/role" class="sub-link {{ request()->is('role*') ? 'active' : '' }}">Master Role</a>
+                            <a href="/user" class="sub-link {{ request()->is('user*') ? 'active' : '' }}">Master User</a>
+                            <a href="/margin-penjualan" class="sub-link {{ request()->is('margin-penjualan*') ? 'active' : '' }}">Margin Penjualan</a>
+                        </div>
+                    </li>
+                @endif
 
                 <li class="menu-heading">TRANSAKSI</li>
-                <li>
-                    <a href="/pengadaan" class="sidebar-link {{ request()->is('pengadaan*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span>Pengadaan</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/penerimaan" class="sidebar-link {{ request()->is('penerimaan*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-truck-ramp-box"></i>
-                        <span>Penerimaan</span>
-                    </a>
-                </li>
+
+                @if ($isSuperAdmin)
+                    <li>
+                        <a href="/pengadaan" class="sidebar-link {{ request()->is('pengadaan*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                            <span>Pengadaan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/penerimaan" class="sidebar-link {{ request()->is('penerimaan*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-truck-ramp-box"></i>
+                            <span>Penerimaan</span>
+                        </a>
+                    </li>
+                @endif
+
                 <li>
                     <a href="/penjualan" class="sidebar-link {{ request()->is('penjualan*') ? 'active' : '' }}">
                         <i class="fa-solid fa-cash-register"></i>

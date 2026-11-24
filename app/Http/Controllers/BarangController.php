@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class BarangController extends Controller
 {
-    // READ 1: Menampilkan daftar tabel dari view_barang + eksekusi Stored Function harga_jual
+    // READ 1: Menampilkan daftar tabel dari view_barang +  Stored Function harga_jual
     public function index()
     {
         $barang = DB::table('view_barang')
